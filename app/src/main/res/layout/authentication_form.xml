@@ -32,22 +32,11 @@
             android:text="Password"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/PasswordLabel"
+            android:id="@+id/passwordLabel"
             android:layout_below="@+id/usernameField"
             android:layout_alignLeft="@+id/passwordField"
             android:layout_alignStart="@+id/passwordField"
             android:layout_marginTop="26dp" />
-
-        <EditText
-            android:layout_width="285dp"
-            android:layout_height="wrap_content"
-            android:inputType="textPassword"
-            android:ems="10"
-            android:id="@+id/passwordField"
-            android:layout_below="@+id/PasswordLabel"
-            android:layout_alignRight="@+id/usernameField"
-            android:layout_alignEnd="@+id/usernameField"
-            android:layout_marginTop="27dp" />
 
         <Button
             android:text="Submit"
@@ -57,5 +46,16 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="77dp"
             android:id="@+id/submitButton" />
+
+        <EditText
+            android:layout_width="285dp"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:ems="10"
+            android:id="@+id/passwordField"
+            android:layout_marginTop="28dp"
+            android:layout_below="@+id/passwordLabel"
+            android:layout_alignRight="@+id/usernameField"
+            android:layout_alignEnd="@+id/usernameField" />
     </RelativeLayout>
 </LinearLayout>
