@@ -1,10 +1,9 @@
 from bottle import request, response
 from bottle import post, get, delete
 
-import json, sqlite3
 from api import apiUtils
 
-
+#TODO Generalize requests
 @get('/users')
 def listing_handler():
 	'''Handles users listing'''
@@ -50,15 +49,18 @@ def creation_handler():
 		password = data['password']	
 
 	except ValueError:
-		# if bad request data, return 400 Bad Request
 		response.status = "400 Value Error"
+		return
+
+	except KeyError:
+		response.status = "400 Key Error"
 		return
 
 	try:
 		c = apiUtils.connectDb()
 		c.execute("INSERT INTO users VALUES (?,?)", (username, password))
 		c.commit()
-	except sqlite3.Error as e:
+	except apiUtils.Errors as e:
 		#TODO Precise error handling as things are going to get more complex there
 		c.rollback()
 		response.status = "400 User exists already"
@@ -80,7 +82,7 @@ def deletion_handler(username):
 		try:
 			c.execute("DELETE FROM users WHERE users.username =(?)", (username,))
 			c.commit()
-		except sqlite3.Error as e:
+		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
 			c.rollback()
 			response.status = "400 Unknow error"

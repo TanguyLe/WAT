@@ -1,10 +1,9 @@
 from bottle import request, response
 from bottle import post, get
 
-import json
 from api import apiUtils
 
-
+#TODO Generalize requests
 @post('/login')
 def login_handler():
 	'''Handles login'''
@@ -24,6 +23,10 @@ def login_handler():
 
 	except ValueError:
 		response.status = "400 Value Error"
+		return
+
+	except KeyError:
+		response.status = "400 Key Error"
 		return
 
 	c = apiUtils.connectDb().cursor()

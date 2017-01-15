@@ -16,3 +16,5 @@ def connectDb():
 def jsonReturn(value):
 	response.headers['Content-Type'] = 'application/json'
 	return json.dumps(value)
+
+Errors = sqlite3.Error
