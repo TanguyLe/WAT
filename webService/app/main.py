@@ -1,6 +1,6 @@
 import bottle
 
-from api import authentication
+from api import index
 
 app = application = bottle.default_app()
 
