@@ -30,7 +30,7 @@ def login_handler():
 		return
 
 	c = apiUtils.connectDb().cursor()
-	data = c.execute("SELECT * FROM users WHERE users.username =(?)", (username,)).fetchone()
+	data = c.execute("SELECT * FROM user WHERE user.username =(?)", (username,)).fetchone()
 	c.close()
 	if(data):
 		if(data['password'] == password):
