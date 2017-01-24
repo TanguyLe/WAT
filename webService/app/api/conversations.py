@@ -32,7 +32,6 @@ def creation_handler():
 		c.execute("INSERT INTO conversation(name) VALUES (?)", (name,))
 		c.commit()
 	except apiUtils.Errors as e:
-		print(e)
 		#TODO Precise error handling as things are going to get more complex there
 		c.rollback()
 		response.status = "400 Unknown Error"

@@ -8,7 +8,6 @@ from api import apiUtils
 def listing_handler():
 	'''Handles users listing'''
 
-	_users = []
 	c = apiUtils.connectDb().cursor()
 	c.execute("""SELECT id, username, password FROM user""")
 	data = c.fetchall()
