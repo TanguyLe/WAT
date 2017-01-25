@@ -3,28 +3,27 @@ from bottle import post, get, delete
 
 from api import apiUtils
 
-@get('/users/<user_id>/conversations')
-def listing_handler(user_id):
-	'''Handles single user show'''
-	# parse input data
+#TODO Generalize requests
+@get('/conversations/<conv_id>/messages')
+def listing_handler(conv_id):
+	'''Handles user creation'''
 
 	c = apiUtils.connectDb().cursor()
-
-	user = c.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
-	if(user):
-		data = c.execute("SELECT conversation.id, conversation.name FROM conversation, conversation_participant WHERE (conversation_participant.user =(?) AND conversation_participant.conversation = conversation.id)", (user_id)).fetchall()
+	test = c.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
+	if(test):
+		data = c.execute("""SELECT message.id, message.content, message.createdDate, message.user FROM message WHERE message.conversation =(?)""", (conv_id,)).fetchall()
 		c.close()
 		return apiUtils.jsonReturn(data)
 
 	c.close()
-	response.status = "400 User doesn't exist"
+	response.status = "400 Conversation dosen't exist"
 	return
+	
+	pass
 
-#TODO Generalize requests
-@post('/conversations')
-def creation_handler():
+@post('/conversations/<conv_id>/messages')
+def creation_handler(conv_id):
 	'''Handles user creation'''
-
 	try:
 		try:
 			data = request.json
@@ -34,7 +33,8 @@ def creation_handler():
 		if data is None:
 			raise ValueError
 
-		name = data['name']
+		user_id = data['user_id']
+		content = data['content']
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -46,7 +46,7 @@ def creation_handler():
 
 	try:
 		c = apiUtils.connectDb()
-		c.execute("INSERT INTO conversation(name) VALUES (?)", (name,))
+		c.execute("INSERT INTO message(content, conversation, user) VALUES (?, ?, ?)", (content, conv_id, user_id))
 		c.commit()
 	except apiUtils.Errors as e:
 		#TODO Precise error handling as things are going to get more complex there
@@ -57,20 +57,18 @@ def creation_handler():
 	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
 	return apiUtils.jsonReturn({"status": "SUCCESS"})
 
-@delete('/conversations/<id>')
-def deletion_handler(id):
-	'''Handles user deletion'''
+@delete('/conversations/<conv_id>/messages/<message_id>')
+def deletion_handler(conv_id, message_id):
+	'''Handles user creation'''
 
 	c = apiUtils.connectDb()
 	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (id,)).fetchone()
+	data = cursor.execute("SELECT * FROM message WHERE (message.id =(?) AND message.conversation =(?))", (message_id, conv_id)).fetchone()
 	cursor.close()
 
 	if(data):
 		try:
-			c.execute("DELETE FROM conversation WHERE (conversation.id =(?))", (id,))
-			c.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?))", (id,))
-			c.execute("DELETE FROM message WHERE (message.conversation =(?))", (id,))
+			c.execute("DELETE FROM message WHERE (message.id =(?) AND message.conversation =(?))", (message_id, conv_id))
 			c.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
@@ -81,5 +79,6 @@ def deletion_handler(id):
 		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
 		return apiUtils.jsonReturn({"status": "SUCCESS"})
 
-	response.status = "400 Conversation doesn't exist"
+	#TODO separate case user doesn't exist
+	response.status = "400 Message doesn't exist or is in this conversation"
 	return
