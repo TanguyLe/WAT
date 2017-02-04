@@ -11,7 +11,7 @@ def listing_handler(conv_id):
 	c = apiUtils.connectDb().cursor()
 	test = c.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
 	if(test):
-		data = c.execute("""SELECT user.id, user.username FROM user, conversation_participant WHERE (user.id = conversation_participant.user AND conversation_participant.conversation =(?))""", (conv_id,)).fetchall()
+		data = c.execute("SELECT user.id, user.username FROM user, conversation_participant WHERE (user.id = conversation_participant.user AND conversation_participant.conversation =(?))", (conv_id,)).fetchall()
 		c.close()
 		return apiUtils.jsonReturn(data)
 

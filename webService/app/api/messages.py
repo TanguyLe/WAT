@@ -1,5 +1,5 @@
 from bottle import request, response
-from bottle import post, get, delete
+from bottle import post, put, get, delete
 
 from api import apiUtils
 
@@ -57,18 +57,63 @@ def creation_handler(conv_id):
 	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
 	return apiUtils.jsonReturn({"status": "SUCCESS"})
 
-@delete('/conversations/<conv_id>/messages/<message_id>')
-def deletion_handler(conv_id, message_id):
-	'''Handles user creation'''
+@put('/messages/<msg_id>')
+def update_username_handler(msg_id):
+	'''Handles user deletion'''
+
+	try:
+		try:
+			dataRequest = request.json
+		except:
+			raise ValueError
+
+		if dataRequest is None:
+			raise ValueError
+
+		content = dataRequest["content"]
+
+	except ValueError:
+		response.status = "400 Value Error"
+		return
+
+	except KeyError:
+		response.status = "400 Key Error"
+		return
 
 	c = apiUtils.connectDb()
 	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM message WHERE (message.id =(?) AND message.conversation =(?))", (message_id, conv_id)).fetchone()
+	data = cursor.execute("SELECT * FROM message WHERE (message.id =(?))", (msg_id, )).fetchone()
 	cursor.close()
 
 	if(data):
 		try:
-			c.execute("DELETE FROM message WHERE (message.id =(?) AND message.conversation =(?))", (message_id, conv_id))
+			c.execute("UPDATE message SET content =? WHERE id =(?)", (content, msg_id))
+			c.commit()
+		except apiUtils.Errors as e:
+			#TODO Precise error handling as things are going to get more complex there
+			c.rollback()
+			
+			response.status = "400 Name already taken"
+			return
+
+		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
+		return apiUtils.jsonReturn({"status": "SUCCESS"})
+
+	response.status = "400 Message doesn't exist"
+	return
+
+@delete('/messages/<message_id>')
+def deletion_handler(message_id):
+	'''Handles user creation'''
+
+	c = apiUtils.connectDb()
+	cursor = c.cursor()
+	data = cursor.execute("SELECT * FROM message WHERE (message.id =(?))", (message_id, )).fetchone()
+	cursor.close()
+
+	if(data):
+		try:
+			c.execute("DELETE FROM message WHERE (message.id =(?))", (message_id,))
 			c.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
@@ -80,5 +125,5 @@ def deletion_handler(conv_id, message_id):
 		return apiUtils.jsonReturn({"status": "SUCCESS"})
 
 	#TODO separate case user doesn't exist
-	response.status = "400 Message doesn't exist or is in this conversation"
+	response.status = "400 Message doesn't exist"
 	return

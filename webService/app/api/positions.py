@@ -4,7 +4,7 @@ from bottle import post, get, delete
 from api import apiUtils
 
 #TODO Generalize requests
-@post('users/<user_id>/positions')
+@post('/users/<user_id>/positions')
 def creation_handler(user_id):
 	'''Handles user creation'''
 	try:
@@ -39,7 +39,7 @@ def creation_handler(user_id):
 	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
 	return apiUtils.jsonReturn({"status": "SUCCESS"})
 
-@get('users/<user_id>/positions')
+@get('/users/<user_id>/positions')
 def listing_handler(user_id):
 	'''Handles user creation'''
 
@@ -57,7 +57,7 @@ def listing_handler(user_id):
 	response.status = "400 User doesn't exist nor have a position"
 	return
 
-@get('users/<user_id>/positions/last')
+@get('/users/<user_id>/positions/last')
 def show_handler(user_id):
 	'''Handles user creation'''
 

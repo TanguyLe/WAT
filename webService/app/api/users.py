@@ -68,8 +68,8 @@ def creation_handler():
 	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
 	return apiUtils.jsonReturn({"status": "SUCCESS"})
 
-@route('/users/<id>', 'PATCH')
-def update_username_handler(id):
+@route('/users/<user_id>', 'PATCH')
+def update_username_handler(user_id):
 	'''Handles user deletion'''
 
 	try:
@@ -81,7 +81,7 @@ def update_username_handler(id):
 		if dataRequest is None:
 			raise ValueError
 
-		username = dataRequest['username']
+		keys = dataRequest.keys()
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -90,16 +90,18 @@ def update_username_handler(id):
 	except KeyError:
 		response.status = "400 Key Error"
 		return
-
+	
+	### A lot of checks
 
 	c = apiUtils.connectDb()
 	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (id,)).fetchone()
+	data = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
 	cursor.close()
 
 	if(data):
 		try:
-			c.execute("UPDATE user SET username =? WHERE id =(?)", (username, id))
+			for key in keys:
+				c.execute("UPDATE user SET " + key + " =? WHERE id =(?)", (dataRequest[key], user_id))
 			c.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
