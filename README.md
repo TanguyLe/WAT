@@ -3,7 +3,7 @@
 ##Installation
 First use :
 
-'git clone git@github.com:TanguyLe/WAT.git'
+`git clone git@github.com:TanguyLe/WAT.git`
 
 ###WebService
 The webService used by WAT is a python (bottle.py) application using sqlite. Consequently you need to have those 3 dependencies installed.
@@ -15,8 +15,9 @@ First install the latest python 3 release from [python's website](https://www.py
 And finally [sqlite](https://www.tutorialspoint.com/sqlite/sqlite_installation.htm) following the instructions.
 ##QuickStart
 ###WebService
+After setting up with your OS, you can browse at localhost:8080 to use the webService, see localhost:8080/help.
 ####Ubuntu
-Switch to your virtual environnement by running '. ./env/bin/activate' (if your environnement is env) in the correct directory and then 'python ./main.py'. (May vary according to your python command)
+Switch to your virtual environnement by running `. ./env/bin/activate` (if your environnement is env) in the correct directory and then `python ./main.py`. (May vary according to your python command)
 ####Windows
-Get to the webService/app folder and then use 'py ./main.py' to run the bottle server. (May vary according to your python command)
+Get to the webService/app folder and then use `py ./main.py` to run the bottle server. (May vary according to your python command) 
 ##Documentation
