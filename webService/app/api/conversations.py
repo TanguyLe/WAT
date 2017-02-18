@@ -8,15 +8,15 @@ def listing_handler(user_id):
 	'''Handles single user show'''
 	# parse input data
 
-	c = apiUtils.connectDb().cursor()
+	cursor = apiUtils.getDbConnect().cursor()
 
-	user = c.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
+	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
 	if(user):
-		data = c.execute("SELECT conversation.id, conversation.name FROM conversation, conversation_participant WHERE (conversation_participant.user =(?) AND conversation_participant.conversation = conversation.id)", (user_id)).fetchall()
-		c.close()
-		return apiUtils.jsonReturn(data)
+		user = cursor.execute("SELECT conversation.id, conversation.name FROM conversation, conversation_participant WHERE (conversation_participant.user =(?) AND conversation_participant.conversation = conversation.id)", (user_id)).fetchall()
+		cursor.close()
+		return apiUtils.jsonReturn(user)
 
-	c.close()
+	cursor.close()
 	response.status = "400 User doesn't exist"
 	return
 
@@ -27,15 +27,15 @@ def creation_handler(user_id):
 
 	try:
 		try:
-			data = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if data is None:
+		if body is None:
 			raise ValueError
 
-		name = data['name']
-		second_user_id = data['second_user_id']
+		convname = body['convname']
+		second_user_id = body['second_user_id']
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -46,37 +46,37 @@ def creation_handler(user_id):
 		return
 
 	try:
-		c = apiUtils.connectDb()
-		c.execute("INSERT INTO conversation(name) VALUES (?)", (name,))
-		cursor = c.cursor()
-		data = cursor.execute("SELECT id FROM conversation ORDER BY id DESC LIMIT 1").fetchone()
+		dbConnect = apiUtils.getDbConnect()
+		dbConnect.execute("INSERT INTO conversation(name) VALUES (?)", (name,))
+		cursor = dbConnect.cursor()
+		conversation = cursor.execute("SELECT id FROM conversation ORDER BY id DESC LIMIT 1").fetchone()
 
-		c.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (data["id"], user_id))
-		c.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (data["id"], second_user_id))
-		c.commit()
+		dbConnect.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conversation["id"], user_id))
+		dbConnect.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conversation["id"], second_user_id))
+		dbConnect.commit()
 	except apiUtils.Errors as e:
 		#TODO Precise error handling as things are going to get more complex there
-		c.rollback()
+		dbConnect.rollback()
 		response.status = "400 Unknown Error"
 		return
 
 	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
 	return apiUtils.jsonReturn({"status": "SUCCESS"})
 
-@put('/conversations/<id>')
-def update_username_handler(id):
+@put('/conversations/<conv_id>')
+def update_username_handler(conv_id):
 	'''Handles user deletion'''
 
 	try:
 		try:
-			dataRequest = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if dataRequest is None:
+		if body is None:
 			raise ValueError
 
-		name = dataRequest["name"]
+		convname = body["convname"]
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -86,18 +86,18 @@ def update_username_handler(id):
 		response.status = "400 Key Error"
 		return
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM conversation WHERE conversation.id =(?)", (id,)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	conversation = cursor.execute("SELECT * FROM conversation WHERE conversation.id =(?)", (conv_id,)).fetchone()
 	cursor.close()
 
-	if(data):
+	if(conversation):
 		try:
-			c.execute("UPDATE conversation SET name =? WHERE id =(?)", (name, id))
-			c.commit()
+			dbConnect.execute("UPDATE conversation SET name =? WHERE id =(?)", (convname, conv_id))
+			dbConnect.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
-			c.rollback()
+			dbConnect.rollback()
 			
 			response.status = "400 Name already taken"
 			return
@@ -108,24 +108,24 @@ def update_username_handler(id):
 	response.status = "400 Conv doesn't exist"
 	return
 
-@delete('/conversations/<id>')
-def deletion_handler(id):
+@delete('/conversations/<conv_id>')
+def deletion_handler(conv_id):
 	'''Handles user deletion'''
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (id,)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	conversation = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
 	cursor.close()
 
-	if(data):
+	if(conversation):
 		try:
-			c.execute("DELETE FROM conversation WHERE (conversation.id =(?))", (id,))
-			c.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?))", (id,))
-			c.execute("DELETE FROM message WHERE (message.conversation =(?))", (id,))
-			c.commit()
+			dbConnect.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?))", (conv_id,))
+			dbConnect.execute("DELETE FROM message WHERE (message.conversation =(?))", (conv_id,))
+			dbConnect.execute("DELETE FROM conversation WHERE (conversation.id =(?))", (conv_id,))
+			dbConnect.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
-			c.rollback()
+			dbConnect.rollback()
 			response.status = "400 Unknow error"
 			return
 

@@ -8,7 +8,7 @@ def dict_factory(cursor, row):
 		d[col[0]] = row[idx]
 	return d
  
-def connectDb():
+def getDbConnect():
 	connection = sqlite3.connect('../db/WAT.db')
 	connection.row_factory = dict_factory
 	return connection

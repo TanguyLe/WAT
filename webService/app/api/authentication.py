@@ -11,15 +11,15 @@ def login_handler():
 
 		# parse input data
 		try:
-			data = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if data is None:
+		if body is None:
 			raise ValueError
 
-		username = data['username']
-		password = data['password']
+		username = body['username']
+		password = body['password']
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -29,11 +29,11 @@ def login_handler():
 		response.status = "400 Key Error"
 		return
 
-	c = apiUtils.connectDb().cursor()
-	data = c.execute("SELECT * FROM user WHERE user.username =(?)", (username,)).fetchone()
-	c.close()
-	if(data):
-		if(data['password'] == password):
+	cursor = apiUtils.getDbConnect().cursor()
+	user = cursor.execute("SELECT * FROM user WHERE user.username =(?)", (username,)).fetchone()
+	cursor.close()
+	if(user):
+		if(user['password'] == password):
 			#TODO Of course new things will be necessary there
 			return apiUtils.jsonReturn({'loginKey': 'Ok'})
 		response.status = "400 Wrong Password"

@@ -9,14 +9,14 @@ def creation_handler(user_id):
 	'''Handles user creation'''
 	try:
 		try:
-			data = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if data is None:
+		if body is None:
 			raise ValueError
 
-		position = data['position']
+		position = body['position']
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -27,12 +27,12 @@ def creation_handler(user_id):
 		return
 
 	try:
-		c = apiUtils.connectDb()
-		c.execute("INSERT INTO position(position, user) VALUES (?, ?)", (position, user_id))
-		c.commit()
+		dbConnect = apiUtils.getDbConnect()
+		dbConnect.execute("INSERT INTO position(position, user) VALUES (?, ?)", (position, user_id))
+		dbConnect.commit()
 	except apiUtils.Errors as e:
 		#TODO Precise error handling as things are going to get more complex there
-		c.rollback()
+		dbConnect.rollback()
 		response.status = "400 Unknown Error"
 		return
 
@@ -44,14 +44,14 @@ def listing_handler(user_id):
 	'''Handles user creation'''
 
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT id, position, createdDate, user FROM position WHERE position.user = (?)", (user_id,)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	positions = cursor.execute("SELECT id, position, createdDate, user FROM position WHERE position.user = (?)", (user_id,)).fetchone()
 	cursor.close()
 	
-	if(data):
+	if(positions):
 		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-		return apiUtils.jsonReturn(data)
+		return apiUtils.jsonReturn(positions)
 
 	#TODO separate case user doesn't exist
 	response.status = "400 User doesn't exist nor have a position"
@@ -62,14 +62,14 @@ def show_handler(user_id):
 	'''Handles user creation'''
 
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT id, position, createdDate, user FROM position WHERE position.user = (?) ORDER BY id DESC LIMIT 1", (user_id,)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	position = cursor.execute("SELECT id, position, createdDate, user FROM position WHERE position.user = (?) ORDER BY id DESC LIMIT 1", (user_id,)).fetchone()
 	cursor.close()
 	
-	if(data):
+	if(position):
 		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-		return apiUtils.jsonReturn(data)
+		return apiUtils.jsonReturn(position)
 
 	#TODO separate case user doesn't exist
 	response.status = "400 User doesn't exist nor have a position"

@@ -9,15 +9,15 @@ def listing_handler(user_id):
 	'''Handles single user show'''
 	# parse input data
 
-	c = apiUtils.connectDb().cursor()
+	cursor = apiUtils.getDbConnect().cursor()
 
-	user = c.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
+	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
 	if(user):
-		data = c.execute("SELECT user.id, user.username FROM friendship, user WHERE ((friendship.firstFriend =(?) AND friendship.secondFriend = user.id) OR (friendship.secondFriend =(?) AND friendship.firstFriend = user.id))", (user_id, user_id)).fetchall()
-		c.close()
-		return apiUtils.jsonReturn(data)
+		users = cursor.execute("SELECT user.id, user.username FROM friendship, user WHERE ((friendship.firstFriend =(?) AND friendship.secondFriend = user.id) OR (friendship.secondFriend =(?) AND friendship.firstFriend = user.id))", (user_id, user_id)).fetchall()
+		cursor.close()
+		return apiUtils.jsonReturn(users)
 
-	c.close()
+	cursor.close()
 	response.status = "400 User doesn't exist"
 	return
 
@@ -27,14 +27,14 @@ def creation_handler(user_id):
 
 	try:
 		try:
-			data = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if data is None:
+		if body is None:
 			raise ValueError
 
-		friend_id = data['user_id']
+		friend_id = body['user_id']
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -45,12 +45,19 @@ def creation_handler(user_id):
 		return
 
 	try:
-		c = apiUtils.connectDb()
-		c.execute("INSERT INTO friendship(firstFriend, secondFriend) VALUES (?,?)", (user_id, friend_id))
-		c.commit()
+		dbConnect = apiUtils.getDbConnect()
+		cursor = dbConnect.cursor()
+		friendship = cursor.execute("SELECT * FROM friendship WHERE (friendship.firstFriend =(?) AND friendship.secondFriend =(?))", (friend_id, user_id)).fetchone()
+		cursor.close()
+		if(friendship):
+			response.status = "400 Friendship exists already"
+			return
+
+		dbConnect.execute("INSERT INTO friendship(firstFriend, secondFriend) VALUES (?,?)", (user_id, friend_id))
+		dbConnect.commit()
 	except apiUtils.Errors as e:
 		#TODO Precise error handling as things are going to get more complex there
-		c.rollback()
+		dbConnect.rollback()
 		response.status = "400 Friendship exists already"
 		return
 
@@ -63,19 +70,19 @@ def deletion_handler(user_id, friend_id):
 	'''Handles user deletion'''
 
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM friendship WHERE (friendship.firstFriend =(?) AND friendship.secondFriend =(?))", (user_id, friend_id)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	friendship = cursor.execute("SELECT * FROM friendship WHERE ((friendship.firstFriend =(?) AND friendship.secondFriend =(?)) OR (friendship.firstFriend =(?) AND friendship.secondFriend =(?)))", (user_id, friend_id, friend_id, user_id)).fetchone()
 	cursor.close()
 
-	if(data):
+	if(friendship):
 		try:
-			c.execute("DELETE FROM friendship WHERE (friendship.firstFriend =(?) AND friendship.secondFriend =(?))", (user_id, friend_id))
-			c.commit()
+			dbConnect.execute("DELETE FROM friendship WHERE ((friendship.firstFriend =(?) AND friendship.secondFriend =(?)) OR (friendship.firstFriend =(?) AND friendship.secondFriend =(?)))", (user_id, friend_id, friend_id, user_id))
+			dbConnect.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
-			c.rollback()
-			response.status = "400 Unknow error"
+			dbConnect.rollback()
+			response.status = "400 Unknown, error"
 			return
 
 		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)

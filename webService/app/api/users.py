@@ -8,24 +8,24 @@ from api import apiUtils
 def listing_handler():
 	'''Handles users listing'''
 
-	c = apiUtils.connectDb().cursor()
-	c.execute("""SELECT id, username, password FROM user""")
-	data = c.fetchall()
-	c.close()
-	return apiUtils.jsonReturn(data)
+	cursor = apiUtils.getDbConnect().cursor()
+	cursor.execute("SELECT * FROM user")
+	users = cursor.fetchall()
+	cursor.close()
+	return apiUtils.jsonReturn(users)
 
 	pass
 
-@get('/users/<id>')
-def show_handler(id):
+@get('/users/<user_id>')
+def show_handler(user_id):
 	'''Handles single user show'''
 	# parse input data
 
-	c = apiUtils.connectDb().cursor()
-	data = c.execute("SELECT * FROM user WHERE user.id =(?)", (id,)).fetchone()
-	c.close()
-	if(data):
-		return apiUtils.jsonReturn(data)
+	dbConnect = apiUtils.getDbConnect().cursor()
+	user = dbConnect.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
+	dbConnect.close()
+	if(user):
+		return apiUtils.jsonReturn(users)
 
 	response.status = "400 User doesn't exist"
 	return
@@ -37,15 +37,15 @@ def creation_handler():
 
 	try:
 		try:
-			data = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if data is None:
+		if body is None:
 			raise ValueError
 
-		username = data['username']
-		password = data['password']	
+		username = body['username']
+		password = body['password']	
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -56,12 +56,12 @@ def creation_handler():
 		return
 
 	try:
-		c = apiUtils.connectDb()
-		c.execute("INSERT INTO user(username, password) VALUES (?,?)", (username, password))
-		c.commit()
+		dbConnect = apiUtils.getDbConnect()
+		dbConnect.execute("INSERT INTO user(username, password) VALUES (?,?)", (username, password))
+		dbConnect.commit()
 	except apiUtils.Errors as e:
 		#TODO Precise error handling as things are going to get more complex there
-		c.rollback()
+		dbConnect.rollback()
 		response.status = "400 User exists already"
 		return
 
@@ -74,14 +74,14 @@ def update_username_handler(user_id):
 
 	try:
 		try:
-			dataRequest = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if dataRequest is None:
+		if body is None:
 			raise ValueError
 
-		keys = dataRequest.keys()
+		keys = body.keys()
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -93,19 +93,19 @@ def update_username_handler(user_id):
 	
 	### A lot of checks
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
 	cursor.close()
 
-	if(data):
+	if(user):
 		try:
 			for key in keys:
-				c.execute("UPDATE user SET " + key + " =? WHERE id =(?)", (dataRequest[key], user_id))
-			c.commit()
+				dbConnect.execute("UPDATE user SET " + key + " =? WHERE id =(?)", (dataRequest[key], user_id))
+			dbConnect.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
-			c.rollback()
+			dbConnect.rollback()
 			
 			response.status = "400 Name already taken"
 			return
@@ -117,22 +117,23 @@ def update_username_handler(user_id):
 	return
 
 
-@delete('/users/<id>')
-def deletion_handler(id):
+@delete('/users/<user_id>')
+def deletion_handler(user_id):
 	'''Handles user deletion'''
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (id,)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
 	cursor.close()
 
-	if(data):
+	if(user):
 		try:
-			c.execute("DELETE FROM message WHERE message.user=(?)", (id,))
-			c.execute("DELETE FROM conversation_participant WHERE conversation_participant.user=(?)", (id,))
-			c.execute("DELETE FROM friendship WHERE friendship.firstFriend=(?) OR friendship.secondFriend=(?)", (id, id))
-			c.execute("DELETE FROM user WHERE user.id =(?)", (id,))
-			c.commit()
+			dbConnect.execute("DELETE FROM message WHERE message.user=(?)", (user_id,))
+			dbConnect.execute("DELETE FROM position WHERE position.user=(?)", (user_id,))
+			dbConnect.execute("DELETE FROM conversation_participant WHERE conversation_participant.user=(?)", (user_id,))
+			dbConnect.execute("DELETE FROM friendship WHERE friendship.firstFriend=(?) OR friendship.secondFriend=(?)", (user_id, user_id))
+			dbConnect.execute("DELETE FROM user WHERE user.id =(?)", (user_id,))
+			dbConnect.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
 			c.rollback()

@@ -8,14 +8,14 @@ from api import apiUtils
 def listing_handler(conv_id):
 	'''Handles user creation'''
 
-	c = apiUtils.connectDb().cursor()
-	test = c.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
-	if(test):
-		data = c.execute("SELECT user.id, user.username FROM user, conversation_participant WHERE (user.id = conversation_participant.user AND conversation_participant.conversation =(?))", (conv_id,)).fetchall()
-		c.close()
-		return apiUtils.jsonReturn(data)
+	cursor = apiUtils.getDbConnect().cursor()
+	conversation = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
+	if(conversation):
+		participants = cursor.execute("SELECT user.id, user.username FROM user, conversation_participant WHERE (user.id = conversation_participant.user AND conversation_participant.conversation =(?))", (conv_id,)).fetchall()
+		cursor.close()
+		return apiUtils.jsonReturn(participants)
 
-	c.close()
+	cursor.close()
 	response.status = "400 Conversation dosen't exist"
 	return
 	
@@ -26,14 +26,14 @@ def creation_handler(conv_id):
 	'''Handles user creation'''
 	try:
 		try:
-			data = request.json
+			body = request.json
 		except:
 			raise ValueError
 
-		if data is None:
+		if body is None:
 			raise ValueError
 
-		user_id = data['user_id']
+		user_id = body['user_id']
 
 	except ValueError:
 		response.status = "400 Value Error"
@@ -44,12 +44,12 @@ def creation_handler(conv_id):
 		return
 
 	try:
-		c = apiUtils.connectDb()
-		c.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conv_id, user_id))
-		c.commit()
+		dbConnect = apiUtils.getDbConnect()
+		dbConnect.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conv_id, user_id))
+		dbConnect.commit()
 	except apiUtils.Errors as e:
 		#TODO Precise error handling as things are going to get more complex there
-		c.rollback()
+		dbConnect.rollback()
 		response.status = "400 User already in conversation"
 		return
 
@@ -60,18 +60,18 @@ def creation_handler(conv_id):
 def deletion_handler(conv_id, user_id):
 	'''Handles user creation'''
 
-	c = apiUtils.connectDb()
-	cursor = c.cursor()
-	data = cursor.execute("SELECT * FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id)).fetchone()
+	dbConnect = apiUtils.getDbConnect()
+	cursor = dbConnect.cursor()
+	participants = cursor.execute("SELECT * FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id)).fetchone()
 	cursor.close()
 
-	if(data):
+	if(participants):
 		try:
-			c.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id))
-			c.commit()
+			dbConnect.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id))
+			dbConnect.commit()
 		except apiUtils.Errors as e:
 			#TODO Precise error handling as things are going to get more complex there
-			c.rollback()
+			dbConnect.rollback()
 			response.status = "400 Unknow error"
 			return
 
