@@ -1,23 +1,23 @@
 from bottle import request, response
 from bottle import post, put, get, delete
 
-from api import apiUtils
+from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
+from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
 
-#TODO Generalize requests
+
 @get('/conversations/<conv_id>/messages')
 def listing_handler(conv_id):
 	'''Handles user creation'''
 
-	cursor = apiUtils.getDbConnect().cursor()
+	cursor = getDbConnect().cursor()
 	conversation = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
 	if(conversation):
 		messages = cursor.execute("SELECT message.id, message.content, message.createdDate, message.user FROM message WHERE message.conversation =(?)", (conv_id,)).fetchall()
 		cursor.close()
-		return apiUtils.jsonReturn(messages)
+		return jsonSuccessReturn(messages)
 
 	cursor.close()
-	response.status = "400 Conversation dosen't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Conversation"))
 	
 	pass
 
@@ -37,25 +37,22 @@ def creation_handler(conv_id):
 		content = body['content']
 
 	except ValueError:
-		response.status = "400 Value Error"
-		return
+		return jsonErrorReturn(ErrorMessage._value)
 
 	except KeyError:
-		response.status = "400 Key Error"
-		return
+		return jsonErrorReturn(ErrorMessage._key)
 
 	try:
-		dbConnect = apiUtils.getDbConnect()
+		dbConnect = getDbConnect()
 		dbConnect.execute("INSERT INTO message(content, conversation, user) VALUES (?, ?, ?)", (content, conv_id, user_id))
 		dbConnect.commit()
-	except apiUtils.Errors as e:
-		#TODO Precise error handling as things are going to get more complex there
+	except Errors as e:
+		
 		dbConnect.rollback()
-		response.status = "400 Unknown Error"
-		return
+		return jsonErrorReturn()
 
-	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-	return apiUtils.jsonReturn({"status": "SUCCESS"})
+	
+	return jsonSuccessReturn()
 
 @put('/messages/<msg_id>')
 def update_username_handler(msg_id):
@@ -73,14 +70,12 @@ def update_username_handler(msg_id):
 		content = body["content"]
 
 	except ValueError:
-		response.status = "400 Value Error"
-		return
+		return jsonErrorReturn(ErrorMessage._value)
 
 	except KeyError:
-		response.status = "400 Key Error"
-		return
+		return jsonErrorReturn(ErrorMessage._key)
 
-	dbConnect = apiUtils.getDbConnect()
+	dbConnect = getDbConnect()
 	cursor = dbConnect.cursor()
 	message = cursor.execute("SELECT * FROM message WHERE (message.id =(?))", (msg_id, )).fetchone()
 	cursor.close()
@@ -89,24 +84,22 @@ def update_username_handler(msg_id):
 		try:
 			dbConnect.execute("UPDATE message SET content =? WHERE id =(?)", (content, msg_id))
 			dbConnect.commit()
-		except apiUtils.Errors as e:
-			#TODO Precise error handling as things are going to get more complex there
+		except Errors as e:
+			
 			dbConnect.rollback()
 			
-			response.status = "400 Name already taken"
-			return
+			return jsonErrorReturn()
 
-		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-		return apiUtils.jsonReturn({"status": "SUCCESS"})
+		
+		return jsonSuccessReturn()
 
-	response.status = "400 Message doesn't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Message"))
 
 @delete('/messages/<msg_id>')
 def deletion_handler(msg_id):
 	'''Handles user creation'''
 
-	dbConnect = apiUtils.getDbConnect()
+	dbConnect = getDbConnect()
 	cursor = dbConnect.cursor()
 	message = cursor.execute("SELECT * FROM message WHERE (message.id =(?))", (msg_id, )).fetchone()
 	cursor.close()
@@ -115,15 +108,12 @@ def deletion_handler(msg_id):
 		try:
 			dbConnect.execute("DELETE FROM message WHERE (message.id =(?))", (msg_id,))
 			dbConnect.commit()
-		except apiUtils.Errors as e:
-			#TODO Precise error handling as things are going to get more complex there
+		except Errors as e:
+			
 			dbConnect.rollback()
-			response.status = "400 Unknow error"
-			return
-
-		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-		return apiUtils.jsonReturn({"status": "SUCCESS"})
+			return jsonErrorReturn()
+		
+		return jsonSuccessReturn()
 
 	#TODO separate case user doesn't exist
-	response.status = "400 Message doesn't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Message"))

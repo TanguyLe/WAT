@@ -1,23 +1,23 @@
 from bottle import request, response
 from bottle import post, get, delete
 
-from api import apiUtils
+from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
+from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
 
-#TODO Generalize requests
+
 @get('/conversations/<conv_id>/participants')
 def listing_handler(conv_id):
 	'''Handles user creation'''
 
-	cursor = apiUtils.getDbConnect().cursor()
+	cursor = getDbConnect().cursor()
 	conversation = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
 	if(conversation):
 		participants = cursor.execute("SELECT user.id, user.username FROM user, conversation_participant WHERE (user.id = conversation_participant.user AND conversation_participant.conversation =(?))", (conv_id,)).fetchall()
 		cursor.close()
-		return apiUtils.jsonReturn(participants)
+		return jsonSuccessReturn(participants)
 
 	cursor.close()
-	response.status = "400 Conversation dosen't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Conversation"))
 	
 	pass
 
@@ -36,31 +36,28 @@ def creation_handler(conv_id):
 		user_id = body['user_id']
 
 	except ValueError:
-		response.status = "400 Value Error"
-		return
+		return jsonErrorReturn(ErrorMessage._value)
 
 	except KeyError:
-		response.status = "400 Key Error"
-		return
+		return jsonErrorReturn(ErrorMessage._key)
 
 	try:
-		dbConnect = apiUtils.getDbConnect()
+		dbConnect = getDbConnect()
 		dbConnect.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conv_id, user_id))
 		dbConnect.commit()
-	except apiUtils.Errors as e:
-		#TODO Precise error handling as things are going to get more complex there
+	except Errors as e:
+		
 		dbConnect.rollback()
-		response.status = "400 User already in conversation"
-		return
+		return jsonErrorReturn(ErrorMessage._userinconv)
 
-	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-	return apiUtils.jsonReturn({"status": "SUCCESS"})
+	
+	return jsonSuccessReturn()
 
 @delete('/conversations/<conv_id>/participants/<user_id>')
 def deletion_handler(conv_id, user_id):
 	'''Handles user creation'''
 
-	dbConnect = apiUtils.getDbConnect()
+	dbConnect = getDbConnect()
 	cursor = dbConnect.cursor()
 	participants = cursor.execute("SELECT * FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id)).fetchone()
 	cursor.close()
@@ -69,14 +66,11 @@ def deletion_handler(conv_id, user_id):
 		try:
 			dbConnect.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id))
 			dbConnect.commit()
-		except apiUtils.Errors as e:
-			#TODO Precise error handling as things are going to get more complex there
+		except Errors as e:
+			
 			dbConnect.rollback()
-			response.status = "400 Unknow error"
-			return
+			return jsonErrorReturn()
+		
+		return jsonSuccessReturn()
 
-		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-		return apiUtils.jsonReturn({"status": "SUCCESS"})
-
-	response.status = "400 User doesn't participate in this conversation"
-	return
+	return jsonErrorReturn(ErrorMessage._usernotinconv)

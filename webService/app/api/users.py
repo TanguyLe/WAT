@@ -1,34 +1,30 @@
 from bottle import request, response
 from bottle import post, get, delete, route
 
-from api import apiUtils
+from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
+from api.apiUtils.index import ErrorMessage, sqliteDbAccess
 
-#TODO Generalize requests
+
 @get('/users')
 def listing_handler():
 	'''Handles users listing'''
 
-	cursor = apiUtils.getDbConnect().cursor()
-	cursor.execute("SELECT * FROM user")
-	users = cursor.fetchall()
-	cursor.close()
-	return apiUtils.jsonReturn(users)
+	dbaccess = sqliteDbAccess.create_service()
+	users = dbaccess.get(table="user")
 
-	pass
+	return jsonSuccessReturn(users)
 
 @get('/users/<user_id>')
 def show_handler(user_id):
 	'''Handles single user show'''
-	# parse input data
 
-	dbConnect = apiUtils.getDbConnect().cursor()
-	user = dbConnect.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
-	dbConnect.close()
+	dbaccess = sqliteDbAccess.create_service()
+	user = dbaccess.get(table="user", wfilter=("user.id =" + user_id))
+
 	if(user):
-		return apiUtils.jsonReturn(users)
+		return jsonSuccessReturn(user)
 
-	response.status = "400 User doesn't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
 
 
 @post('/users')
@@ -48,25 +44,18 @@ def creation_handler():
 		password = body['password']	
 
 	except ValueError:
-		response.status = "400 Value Error"
-		return
+		return jsonErrorReturn(ErrorMessage._value)
 
 	except KeyError:
-		response.status = "400 Key Error"
-		return
+		return jsonErrorReturn(ErrorMessage._key)
 
 	try:
-		dbConnect = apiUtils.getDbConnect()
-		dbConnect.execute("INSERT INTO user(username, password) VALUES (?,?)", (username, password))
-		dbConnect.commit()
-	except apiUtils.Errors as e:
-		#TODO Precise error handling as things are going to get more complex there
-		dbConnect.rollback()
-		response.status = "400 User exists already"
-		return
-
-	#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-	return apiUtils.jsonReturn({"status": "SUCCESS"})
+		dbaccess = sqliteDbAccess.create_service()
+		user = dbaccess.insert(table="user", dict={"username": username, "password": password})
+	except sqliteDbAccess.Errors as e:
+		return jsonErrorReturn(ErrorMessage._existsalready.format(name="User"))
+	
+	return jsonSuccessReturn()
 
 @route('/users/<user_id>', 'PATCH')
 def update_username_handler(user_id):
@@ -81,67 +70,53 @@ def update_username_handler(user_id):
 		if body is None:
 			raise ValueError
 
-		keys = body.keys()
+		keys = list(body.keys())
 
 	except ValueError:
-		response.status = "400 Value Error"
-		return
+		return jsonErrorReturn(ErrorMessage._value)
 
 	except KeyError:
-		response.status = "400 Key Error"
-		return
+		return jsonErrorReturn(ErrorMessage._key)
 	
 	### A lot of checks
 
-	dbConnect = apiUtils.getDbConnect()
-	cursor = dbConnect.cursor()
-	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service()
+	user = dbaccess.get(table="user", wfilter=("user.id =" + user_id))
 
+	print(keys)
 	if(user):
 		try:
-			for key in keys:
-				dbConnect.execute("UPDATE user SET " + key + " =? WHERE id =(?)", (dataRequest[key], user_id))
-			dbConnect.commit()
-		except apiUtils.Errors as e:
-			#TODO Precise error handling as things are going to get more complex there
-			dbConnect.rollback()
-			
-			response.status = "400 Name already taken"
-			return
+			for key in keys[:-1]:
+				sfilter = '' + key + '="' + body[key] + '"'
+				dbaccess.update(table="user", sfilter=sfilter, wfilter="id=" + user_id, commit=False)
+				
+			sfilter = '' + keys[-1] + '="' + body[keys[-1]] + '"'
+			dbaccess.update(table="user", sfilter=sfilter, wfilter="id=" + user_id)
+		except sqliteDbAccess.Errors as e:
+			return jsonErrorReturn(ErrorMessage._existsalready.format(name="User"))
+		
+		return jsonSuccessReturn()
 
-		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-		return apiUtils.jsonReturn({"status": "SUCCESS"})
-
-	response.status = "400 User doesn't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
 
 
 @delete('/users/<user_id>')
 def deletion_handler(user_id):
 	'''Handles user deletion'''
 
-	dbConnect = apiUtils.getDbConnect()
-	cursor = dbConnect.cursor()
-	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service()
+	user = dbaccess.get(table="user", wfilter=("user.id =" + user_id))
 
 	if(user):
 		try:
-			dbConnect.execute("DELETE FROM message WHERE message.user=(?)", (user_id,))
-			dbConnect.execute("DELETE FROM position WHERE position.user=(?)", (user_id,))
-			dbConnect.execute("DELETE FROM conversation_participant WHERE conversation_participant.user=(?)", (user_id,))
-			dbConnect.execute("DELETE FROM friendship WHERE friendship.firstFriend=(?) OR friendship.secondFriend=(?)", (user_id, user_id))
-			dbConnect.execute("DELETE FROM user WHERE user.id =(?)", (user_id,))
-			dbConnect.commit()
-		except apiUtils.Errors as e:
-			#TODO Precise error handling as things are going to get more complex there
-			c.rollback()
-			response.status = "400 Unknow error"
-			return
+			dbaccess.delete(table="message", wfilter=("message.user=" + user_id), commit=False)
+			dbaccess.delete(table="position", wfilter=("position.user=" + user_id), commit=False)
+			dbaccess.delete(table="conversation_participant", wfilter=("conversation_participant.user=" + user_id), commit=False)
+			dbaccess.delete(table="friendship", wfilter=("friendship.firstFriend=" + user_id + " OR friendship.secondFriend=" + user_id), commit=False)
+			dbaccess.delete(table="user", wfilter=("user.id=" + user_id))
+		except sqliteDbAccess.Errors as e:
+			return jsonErrorReturn()
+		
+		return jsonSuccessReturn()
 
-		#TODO Should we return something else ? Format our api returns, status is in the response.status (Or is it not ?)
-		return apiUtils.jsonReturn({"status": "SUCCESS"})
-
-	response.status = "400 User doesn't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))

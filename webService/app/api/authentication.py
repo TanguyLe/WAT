@@ -1,9 +1,10 @@
 from bottle import request, response
 from bottle import post, get
 
-from api import apiUtils
+from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
+from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
 
-#TODO Generalize requests
+
 @post('/login')
 def login_handler():
 	'''Handles login'''
@@ -22,22 +23,18 @@ def login_handler():
 		password = body['password']
 
 	except ValueError:
-		response.status = "400 Value Error"
-		return
+		return jsonErrorReturn(ErrorMessage._value)
 
 	except KeyError:
-		response.status = "400 Key Error"
-		return
+		return jsonErrorReturn(ErrorMessage._key)
 
-	cursor = apiUtils.getDbConnect().cursor()
+	cursor = getDbConnect().cursor()
 	user = cursor.execute("SELECT * FROM user WHERE user.username =(?)", (username,)).fetchone()
 	cursor.close()
 	if(user):
 		if(user['password'] == password):
 			#TODO Of course new things will be necessary there
-			return apiUtils.jsonReturn({'loginKey': 'Ok'})
-		response.status = "400 Wrong Password"
-		return
+			return jsonSuccessReturn({'loginKey': 'Ok'})
+		return jsonErrorReturn(ErrorMessage._password)
 
-	response.status = "400 User doesn't exist"
-	return
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
