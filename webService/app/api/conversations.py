@@ -1,29 +1,45 @@
 from bottle import request, response
 from bottle import post, get, delete, put
 
-from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
-from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
+from api.utils.index import jsonSuccessReturn, jsonErrorReturn
+from api.utils.index import sqliteDbAccess
+
+from api.constants.index import ErrorMessage, usersMessageName, conversationsMessageName, messagesTable
+from api.constants.index import usersTable, conversationParticipantsTable, conversationsTable
+
 
 @get('/users/<user_id>/conversations')
 def listing_handler(user_id):
-	'''Handles single user show'''
-	# parse input data
+	'''Handles listing of the conversations of a user'''
+	
+	dbaccess = sqliteDbAccess.create_service()
+	user = dbaccess.get(table=usersTable, wfilter=("id =" + user_id))
 
-	cursor = getDbConnect().cursor()
-
-	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
 	if(user):
-		conversations = cursor.execute("SELECT conversation.id, conversation.name FROM conversation, conversation_participant WHERE (conversation_participant.user =(?) AND conversation_participant.conversation = conversation.id)", (user_id)).fetchall()
-		cursor.close()
+		params = {
+					"conversation": 
+						{
+							"attributes": ["id", "name"], 
+						 	"join": "id"
+					 	}, 
+				    "conversation_participant": 
+				    	{
+				    		"attributes": [], 
+				    		"join": "conversation"
+			    		}
+		    	 }
+		wfilter = "conversation_participant.user =" + user_id
+
+		conversations = dbaccess.getjoin(params=params, wfilter=wfilter)
+			
 		return jsonSuccessReturn(conversations)
 
-	cursor.close()
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=usersMessageName))
 
 
 @post('/users/<user_id>/conversations')
 def creation_handler(user_id):
-	'''Handles user creation'''
+	'''Handles conversation creation'''
 
 	try:
 		try:
@@ -35,7 +51,7 @@ def creation_handler(user_id):
 			raise ValueError
 
 		convname = body['convname']
-		second_user_id = body['second_user_id']
+		second_user_id = body['user_id']
 
 	except ValueError:
 		return jsonErrorReturn(ErrorMessage._value)
@@ -44,25 +60,21 @@ def creation_handler(user_id):
 		return jsonErrorReturn(ErrorMessage._key)
 
 	try:
-		dbConnect = getDbConnect()
-		dbConnect.execute("INSERT INTO conversation(name) VALUES (?)", (name,))
-		cursor = dbConnect.cursor()
-		conversation = cursor.execute("SELECT id FROM conversation ORDER BY id DESC LIMIT 1").fetchone()
+		dbaccess = sqliteDbAccess.create_service(mainTable=conversationParticipantsTable)
+		dbaccess.insert(table=conversationsTable, dict={"name": convname})
 
-		dbConnect.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conversation["id"], user_id))
-		dbConnect.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conversation["id"], second_user_id))
-		dbConnect.commit()
-	except Errors as e:
-		
-		dbConnect.rollback()
+		conversation = dbaccess.getlast(table=conversationsTable)
+
+		dbaccess.insert(dict={"conversation": conversation["id"], "user": user_id})
+		dbaccess.insert(dict={"conversation": conversation["id"], "user": second_user_id})
+	except sqliteDbAccess.Errors as e:
 		return jsonErrorReturn()
 
-	
 	return jsonSuccessReturn()
 
 @put('/conversations/<conv_id>')
 def update_username_handler(conv_id):
-	'''Handles user deletion'''
+	'''Handles conversation name change'''
 
 	try:
 		try:
@@ -81,46 +93,35 @@ def update_username_handler(conv_id):
 	except KeyError:
 		return jsonErrorReturn(ErrorMessage._key)
 
-	dbConnect = getDbConnect()
-	cursor = dbConnect.cursor()
-	conversation = cursor.execute("SELECT * FROM conversation WHERE conversation.id =(?)", (conv_id,)).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service(mainTable=conversationsTable)
+	conversation = dbaccess.get(wfilter=("id = " + conv_id))
 
 	if(conversation):
 		try:
-			dbConnect.execute("UPDATE conversation SET name =? WHERE id =(?)", (convname, conv_id))
-			dbConnect.commit()
-		except Errors as e:
-			
-			dbConnect.rollback()
-			
-			return jsonErrorReturn(ErrorMessage._existsalready.format(name="Conversation name"))
+			dbaccess.update(sfilter=("name = '" + convname + "'"), wfilter=("id = " + conv_id))
+		except sqliteDbAccess.Errors as e:
+			return jsonErrorReturn(ErrorMessage._existsalready.format(name=conversationsMessageName))
 
-		
 		return jsonSuccessReturn()
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Conversation"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=conversationsMessageName))
 
 @delete('/conversations/<conv_id>')
 def deletion_handler(conv_id):
-	'''Handles user deletion'''
+	'''Handles conversation deletion'''
 
-	dbConnect = getDbConnect()
-	cursor = dbConnect.cursor()
-	conversation = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service(mainTable=conversationsTable)
+	conversation = dbaccess.get(wfilter=("id = " + conv_id))
 
 	if(conversation):
 		try:
-			dbConnect.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?))", (conv_id,))
-			dbConnect.execute("DELETE FROM message WHERE (message.conversation =(?))", (conv_id,))
-			dbConnect.execute("DELETE FROM conversation WHERE (conversation.id =(?))", (conv_id,))
-			dbConnect.commit()
-		except Errors as e:
-			
-			dbConnect.rollback()
+			wfilter = "conversation =" + conv_id
+			dbaccess.delete(table=conversationParticipantsTable, wfilter=wfilter, commit=False)
+			dbaccess.delete(table=messagesTable, wfilter=wfilter, commit=False)
+			dbaccess.delete(wfilter=("id =" + conv_id))
+		except sqliteDbAccess.Errors as e:
 			return jsonErrorReturn()
 		
 		return jsonSuccessReturn()
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Conversation"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=conversationsMessageName))

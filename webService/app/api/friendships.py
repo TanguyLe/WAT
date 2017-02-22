@@ -1,29 +1,43 @@
 from bottle import request, response
 from bottle import post, get, delete
 
-from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
-from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
+from api.utils.index import jsonSuccessReturn, jsonErrorReturn
+from api.utils.index import sqliteDbAccess
+
+from api.constants.index import ErrorMessage, usersMessageName, friendshipsMessageName
+from api.constants.index import usersTable, friendshipsTable
 
 
 @get('/users/<user_id>/friends')
 def listing_handler(user_id):
-	'''Handles single user show'''
-	# parse input data
+	'''Handles the listing of a user's friends'''
 
-	cursor = getDbConnect().cursor()
-
-	user = cursor.execute("SELECT * FROM user WHERE user.id =(?)", (user_id,)).fetchone()
+	dbaccess = sqliteDbAccess.create_service()
+	user = dbaccess.get(table=usersTable, wfilter=("id =" + user_id))
 	if(user):
-		users = cursor.execute("SELECT user.id, user.username FROM friendship, user WHERE ((friendship.firstFriend =(?) AND friendship.secondFriend = user.id) OR (friendship.secondFriend =(?) AND friendship.firstFriend = user.id))", (user_id, user_id)).fetchall()
-		cursor.close()
+		params = {
+					"user": 
+						{
+							"attributes": ["id", "username"], 
+						 	"join": "id"
+					 	}, 
+				    "friendship": 
+				    	{
+				    		"attributes": [], 
+				    		"join": "firstFriend"
+			    		}
+		    	 }
+		wfilter = "friendship.secondFriend =" + user_id
+
+		users = dbaccess.getjoin(params=params, wfilter=wfilter)
+
 		return jsonSuccessReturn(users)
 
-	cursor.close()
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=usersMessageName))
 
 @post('/users/<user_id>/friends')
 def creation_handler(user_id):
-	'''Handles user creation'''
+	'''Handles friendship creation'''
 
 	try:
 		try:
@@ -43,44 +57,36 @@ def creation_handler(user_id):
 		return jsonErrorReturn(ErrorMessage._key)
 
 	try:
-		dbConnect = getDbConnect()
-		cursor = dbConnect.cursor()
-		friendship = cursor.execute("SELECT * FROM friendship WHERE (friendship.firstFriend =(?) AND friendship.secondFriend =(?))", (friend_id, user_id)).fetchone()
-		cursor.close()
+		dbaccess = sqliteDbAccess.create_service()
+		wfilter = "firstFriend =" + str(friend_id) + " AND secondFriend =" + str(user_id)
+		friendship = dbaccess.get(table=friendshipsTable, wfilter=wfilter)
 		if(friendship):
-			return jsonErrorReturn(ErrorMessage._existsalready.format(name="Friendship"))
+			return jsonErrorReturn(ErrorMessage._existsalready.format(name=friendshipsMessageName))
 
-		dbConnect.execute("INSERT INTO friendship(firstFriend, secondFriend) VALUES (?,?)", (user_id, friend_id))
-		dbConnect.commit()
-	except Errors as e:
-		
-		dbConnect.rollback()
+		dbaccess.insert(table=friendshipsTable, dict={"firstFriend": user_id, "secondFriend": friend_id})
+		dbaccess.insert(table=friendshipsTable, dict={"firstFriend": friend_id, "secondFriend": user_id})
+	except sqliteDbAccess.Errors as e:
 		return jsonErrorReturn()
 
-	
 	return jsonSuccessReturn()
 
 
 @delete('/users/<user_id>/friends/<friend_id>')
 def deletion_handler(user_id, friend_id):
-	'''Handles user deletion'''
+	'''Handles friendship deletion'''
 
-
-	dbConnect = getDbConnect()
-	cursor = dbConnect.cursor()
-	friendship = cursor.execute("SELECT * FROM friendship WHERE ((friendship.firstFriend =(?) AND friendship.secondFriend =(?)) OR (friendship.firstFriend =(?) AND friendship.secondFriend =(?)))", (user_id, friend_id, friend_id, user_id)).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service(mainTable=friendshipsTable)
+	wfilter1 = "firstFriend =" + friend_id + " AND secondFriend =" + user_id
+	wfilter2 = "firstFriend =" + user_id + " AND secondFriend =" + friend_id
+	friendship = dbaccess.get(wfilter=wfilter1)
 
 	if(friendship):
 		try:
-			dbConnect.execute("DELETE FROM friendship WHERE ((friendship.firstFriend =(?) AND friendship.secondFriend =(?)) OR (friendship.firstFriend =(?) AND friendship.secondFriend =(?)))", (user_id, friend_id, friend_id, user_id))
-			dbConnect.commit()
-		except Errors as e:
-			
-			dbConnect.rollback()
+			dbaccess.delete(wfilter=wfilter1)
+			dbaccess.delete(wfilter=wfilter2)
+		except sqliteDbAccess.Errors as e:
 			return jsonErrorReturn()
 
-		
 		return jsonSuccessReturn()
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Friendship"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=friendshipsMessageName))

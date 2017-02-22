@@ -1,29 +1,47 @@
 from bottle import request, response
 from bottle import post, get, delete
 
-from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
-from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
+from api.utils.index import jsonSuccessReturn, jsonErrorReturn
+from api.utils.index import sqliteDbAccess
+
+from api.constants.index import ErrorMessage, conversationsMessageName
+from api.constants.index import conversationsTable, conversationParticipantsTable
 
 
 @get('/conversations/<conv_id>/participants')
 def listing_handler(conv_id):
-	'''Handles user creation'''
+	'''Handles the listing of participants in a conv'''
 
-	cursor = getDbConnect().cursor()
-	conversation = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
+	dbaccess = sqliteDbAccess.create_service()
+	conversation = dbaccess.get(table=conversationsTable, wfilter=("id =" + conv_id))
+
 	if(conversation):
-		participants = cursor.execute("SELECT user.id, user.username FROM user, conversation_participant WHERE (user.id = conversation_participant.user AND conversation_participant.conversation =(?))", (conv_id,)).fetchall()
-		cursor.close()
+
+		params = {
+					"user": 
+						{
+							"attributes": ["id", "username"], 
+						 	"join": "id"
+					 	}, 
+				    "conversation_participant": 
+				    	{
+				    		"attributes": [], 
+				    		"join": "user"
+			    		}
+		    	 }
+		wfilter = "conversation_participant.conversation =" + conv_id
+
+		participants = dbaccess.getjoin(params=params, wfilter=wfilter)
+
 		return jsonSuccessReturn(participants)
 
-	cursor.close()
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Conversation"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=conversationsMessageName))
 	
 	pass
 
 @post('/conversations/<conv_id>/participants')
 def creation_handler(conv_id):
-	'''Handles user creation'''
+	'''Handles conversation creation'''
 	try:
 		try:
 			body = request.json
@@ -42,33 +60,25 @@ def creation_handler(conv_id):
 		return jsonErrorReturn(ErrorMessage._key)
 
 	try:
-		dbConnect = getDbConnect()
-		dbConnect.execute("INSERT INTO conversation_participant(conversation, user) VALUES (?, ?)", (conv_id, user_id))
-		dbConnect.commit()
-	except Errors as e:
-		
-		dbConnect.rollback()
+		dbaccess = sqliteDbAccess.create_service()
+		dbaccess.insert(table=conversationParticipantsTable, 
+						dict={"conversation": conv_id, "user": user_id})
+	except sqliteDbAccess.Errors as e:
 		return jsonErrorReturn(ErrorMessage._userinconv)
 
-	
 	return jsonSuccessReturn()
 
 @delete('/conversations/<conv_id>/participants/<user_id>')
 def deletion_handler(conv_id, user_id):
-	'''Handles user creation'''
+	'''Handles conversation deletion'''
 
-	dbConnect = getDbConnect()
-	cursor = dbConnect.cursor()
-	participants = cursor.execute("SELECT * FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id)).fetchone()
-	cursor.close()
 
+	dbaccess = sqliteDbAccess.create_service(mainTable=conversationParticipantsTable)
+	participants = dbaccess.get(wfilter=("conversation =" + conv_id + " AND user =" + user_id))
 	if(participants):
 		try:
-			dbConnect.execute("DELETE FROM conversation_participant WHERE (conversation_participant.conversation =(?) AND conversation_participant.user =(?))", (conv_id, user_id))
-			dbConnect.commit()
-		except Errors as e:
-			
-			dbConnect.rollback()
+			dbaccess.delete(wfilter=("conversation =" + conv_id + " AND user =" + user_id))
+		except sqliteDbAccess.Errors as e:
 			return jsonErrorReturn()
 		
 		return jsonSuccessReturn()

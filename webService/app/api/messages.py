@@ -1,29 +1,28 @@
 from bottle import request, response
 from bottle import post, put, get, delete
 
-from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
-from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
+from api.utils.index import jsonSuccessReturn, jsonErrorReturn
+from api.utils.index import sqliteDbAccess
+
+from api.constants.index import ErrorMessage, conversationsMessageName, messagesMessageName
+from api.constants.index import conversationsTable, messagesTable
 
 
 @get('/conversations/<conv_id>/messages')
 def listing_handler(conv_id):
-	'''Handles user creation'''
+	'''Handles listing of conv messages'''
 
-	cursor = getDbConnect().cursor()
-	conversation = cursor.execute("SELECT * FROM conversation WHERE (conversation.id =(?))", (conv_id,)).fetchone()
+	dbaccess = sqliteDbAccess.create_service()
+	conversation = dbaccess.get(table=conversationsTable, wfilter=("id =" + conv_id))
 	if(conversation):
-		messages = cursor.execute("SELECT message.id, message.content, message.createdDate, message.user FROM message WHERE message.conversation =(?)", (conv_id,)).fetchall()
-		cursor.close()
+		messages = dbaccess.get(table=messagesTable, wfilter=("conversation =" + conv_id))
 		return jsonSuccessReturn(messages)
 
-	cursor.close()
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Conversation"))
-	
-	pass
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=conversationsMessageName))
 
 @post('/conversations/<conv_id>/messages')
 def creation_handler(conv_id):
-	'''Handles user creation'''
+	'''Handles message creation'''
 	try:
 		try:
 			body = request.json
@@ -43,20 +42,17 @@ def creation_handler(conv_id):
 		return jsonErrorReturn(ErrorMessage._key)
 
 	try:
-		dbConnect = getDbConnect()
-		dbConnect.execute("INSERT INTO message(content, conversation, user) VALUES (?, ?, ?)", (content, conv_id, user_id))
-		dbConnect.commit()
-	except Errors as e:
-		
-		dbConnect.rollback()
+		dbaccess = sqliteDbAccess.create_service()
+		dbaccess.insert(table=messagesTable, 
+						dict={"content": content, "conversation" : conv_id, "user": user_id})
+	except sqliteDbAccess.Errors as e:
 		return jsonErrorReturn()
 
-	
 	return jsonSuccessReturn()
 
 @put('/messages/<msg_id>')
 def update_username_handler(msg_id):
-	'''Handles user deletion'''
+	'''Handles message content update'''
 
 	try:
 		try:
@@ -75,45 +71,34 @@ def update_username_handler(msg_id):
 	except KeyError:
 		return jsonErrorReturn(ErrorMessage._key)
 
-	dbConnect = getDbConnect()
-	cursor = dbConnect.cursor()
-	message = cursor.execute("SELECT * FROM message WHERE (message.id =(?))", (msg_id, )).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service(mainTable=messagesTable)
+	message = dbaccess.get(wfilter=("id =" + msg_id))
 
 	if(message):
 		try:
-			dbConnect.execute("UPDATE message SET content =? WHERE id =(?)", (content, msg_id))
-			dbConnect.commit()
-		except Errors as e:
-			
-			dbConnect.rollback()
-			
+			dbaccess.update(sfilter=('content ="' + content + '"'), wfilter=("id =" + msg_id))
+		except sqliteDbAccess.Errors as e:
 			return jsonErrorReturn()
 
-		
 		return jsonSuccessReturn()
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Message"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=messageMessage))
 
 @delete('/messages/<msg_id>')
 def deletion_handler(msg_id):
-	'''Handles user creation'''
+	'''Handles message deletion'''
 
-	dbConnect = getDbConnect()
-	cursor = dbConnect.cursor()
-	message = cursor.execute("SELECT * FROM message WHERE (message.id =(?))", (msg_id, )).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service(mainTable=messagesTable)
+	message = dbaccess.get(wfilter=("id =" + msg_id))
 
 	if(message):
 		try:
-			dbConnect.execute("DELETE FROM message WHERE (message.id =(?))", (msg_id,))
-			dbConnect.commit()
-		except Errors as e:
+			dbaccess.delete(wfilter="id =" + msg_id)
+		except sqliteDbAccess.Errors as e:
 			
-			dbConnect.rollback()
 			return jsonErrorReturn()
 		
 		return jsonSuccessReturn()
 
 	#TODO separate case user doesn't exist
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="Message"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=messageMessage))

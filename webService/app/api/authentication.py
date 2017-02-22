@@ -1,8 +1,10 @@
 from bottle import request, response
 from bottle import post, get
 
-from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
-from api.apiUtils.index import ErrorMessage, Errors, getDbConnect
+from api.utils.index import jsonSuccessReturn, jsonErrorReturn
+from api.utils.index import sqliteDbAccess
+
+from api.constants.index import ErrorMessage, usersTable, usersMessageName
 
 
 @post('/login')
@@ -10,7 +12,7 @@ def login_handler():
 	'''Handles login'''
 	try:
 
-		# parse input data
+		
 		try:
 			body = request.json
 		except:
@@ -28,13 +30,12 @@ def login_handler():
 	except KeyError:
 		return jsonErrorReturn(ErrorMessage._key)
 
-	cursor = getDbConnect().cursor()
-	user = cursor.execute("SELECT * FROM user WHERE user.username =(?)", (username,)).fetchone()
-	cursor.close()
+	dbaccess = sqliteDbAccess.create_service()
+	user = dbaccess.get(table=usersTable, wfilter=("username =" + username))
 	if(user):
 		if(user['password'] == password):
 			#TODO Of course new things will be necessary there
 			return jsonSuccessReturn({'loginKey': 'Ok'})
 		return jsonErrorReturn(ErrorMessage._password)
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=usersMessageName))

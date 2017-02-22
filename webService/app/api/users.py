@@ -1,8 +1,10 @@
 from bottle import request, response
 from bottle import post, get, delete, route
 
-from api.apiUtils.index import jsonSuccessReturn, jsonErrorReturn
-from api.apiUtils.index import ErrorMessage, sqliteDbAccess
+from api.utils.index import jsonSuccessReturn, jsonErrorReturn
+from api.utils.index import sqliteDbAccess
+
+from api.constants.index import ErrorMessage, usersTable, usersMessageName
 
 
 @get('/users')
@@ -10,7 +12,7 @@ def listing_handler():
 	'''Handles users listing'''
 
 	dbaccess = sqliteDbAccess.create_service()
-	users = dbaccess.get(table="user")
+	users = dbaccess.get(table=usersTable)
 
 	return jsonSuccessReturn(users)
 
@@ -19,12 +21,12 @@ def show_handler(user_id):
 	'''Handles single user show'''
 
 	dbaccess = sqliteDbAccess.create_service()
-	user = dbaccess.get(table="user", wfilter=("user.id =" + user_id))
+	user = dbaccess.get(table=usersTable, wfilter=("id =" + user_id), multiple=False)
 
 	if(user):
 		return jsonSuccessReturn(user)
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=userMessage))
 
 
 @post('/users')
@@ -51,9 +53,9 @@ def creation_handler():
 
 	try:
 		dbaccess = sqliteDbAccess.create_service()
-		user = dbaccess.insert(table="user", dict={"username": username, "password": password})
+		user = dbaccess.insert(table=usersTable, dict={"username": username, "password": password})
 	except sqliteDbAccess.Errors as e:
-		return jsonErrorReturn(ErrorMessage._existsalready.format(name="User"))
+		return jsonErrorReturn(ErrorMessage._existsalready.format(name=userMessage))
 	
 	return jsonSuccessReturn()
 
@@ -80,43 +82,43 @@ def update_username_handler(user_id):
 	
 	### A lot of checks
 
-	dbaccess = sqliteDbAccess.create_service()
-	user = dbaccess.get(table="user", wfilter=("user.id =" + user_id))
-
-	print(keys)
+	dbaccess = sqliteDbAccess.create_service(mainTable=usersTable)
+	user = dbaccess.get(wfilter=("id =" + user_id))
 	if(user):
 		try:
 			for key in keys[:-1]:
 				sfilter = '' + key + '="' + body[key] + '"'
-				dbaccess.update(table="user", sfilter=sfilter, wfilter="id=" + user_id, commit=False)
+				dbaccess.update(sfilter=sfilter, wfilter="id =" + user_id, commit=False)
 				
 			sfilter = '' + keys[-1] + '="' + body[keys[-1]] + '"'
-			dbaccess.update(table="user", sfilter=sfilter, wfilter="id=" + user_id)
+			dbaccess.update(sfilter=sfilter, wfilter="id =" + user_id)
 		except sqliteDbAccess.Errors as e:
-			return jsonErrorReturn(ErrorMessage._existsalready.format(name="User"))
+			return jsonErrorReturn(ErrorMessage._existsalready.format(name=userMessage))
 		
 		return jsonSuccessReturn()
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=userMessage))
 
 
 @delete('/users/<user_id>')
 def deletion_handler(user_id):
 	'''Handles user deletion'''
 
-	dbaccess = sqliteDbAccess.create_service()
-	user = dbaccess.get(table="user", wfilter=("user.id =" + user_id))
+	dbaccess = sqliteDbAccess.create_service(mainTable=usersTable)
+	user = dbaccess.get(wfilter=("id =" + user_id))
 
 	if(user):
 		try:
-			dbaccess.delete(table="message", wfilter=("message.user=" + user_id), commit=False)
-			dbaccess.delete(table="position", wfilter=("position.user=" + user_id), commit=False)
-			dbaccess.delete(table="conversation_participant", wfilter=("conversation_participant.user=" + user_id), commit=False)
-			dbaccess.delete(table="friendship", wfilter=("friendship.firstFriend=" + user_id + " OR friendship.secondFriend=" + user_id), commit=False)
-			dbaccess.delete(table="user", wfilter=("user.id=" + user_id))
+			wfilter1 = "user =" + user_id
+			wfilter2 = "firstFriend =" + user_id + " OR secondFriend =" + user_id
+			dbaccess.delete(table="message", wfilter=wfilter1, commit=False)
+			dbaccess.delete(table="position", wfilter=wfilter1, commit=False)
+			dbaccess.delete(table="conversation_participant", wfilter=wfilter, commit=False)
+			dbaccess.delete(table="friendship", wfilter=wfilter2, commit=False)
+			dbaccess.delete(wfilter=wfilter1)
 		except sqliteDbAccess.Errors as e:
 			return jsonErrorReturn()
 		
 		return jsonSuccessReturn()
 
-	return jsonErrorReturn(ErrorMessage._doesntexist.format(name="User"))
+	return jsonErrorReturn(ErrorMessage._doesntexist.format(name=userMessage))

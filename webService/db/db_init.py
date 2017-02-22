@@ -1,7 +1,6 @@
 import db_clean
 import sqlite3
 db = sqlite3.connect('WAT.db')
-db.execute("PRAGMA foreign_keys = ON;")
 db.execute("CREATE TABLE user (id INTEGER PRIMARY KEY, username CHAR(100) NOT NULL UNIQUE, password CHAR(100) NOT NULL)")
 db.execute("INSERT INTO user(username, password) VALUES ('Marc', 'lol')")
 db.execute("INSERT INTO user(username, password) VALUES ('Theo', 'smartPass')")
@@ -12,12 +11,19 @@ db.execute("INSERT INTO user(username, password) VALUES ('Paul', 'password4')")
 
 db.execute("CREATE TABLE friendship (firstFriend INTEGER NOT NULL, secondFriend INTEGER NOT NULL, PRIMARY KEY(firstFriend, secondFriend), FOREIGN KEY(firstFriend) REFERENCES user(id), FOREIGN KEY(secondFriend) REFERENCES user(id))")
 db.execute("INSERT INTO friendship VALUES (1,2)")
+db.execute("INSERT INTO friendship VALUES (2,1)")
 db.execute("INSERT INTO friendship VALUES (1,3)")
+db.execute("INSERT INTO friendship VALUES (3,1)")
 db.execute("INSERT INTO friendship VALUES (1,4)")
+db.execute("INSERT INTO friendship VALUES (4,1)")
 db.execute("INSERT INTO friendship VALUES (1,5)")
+db.execute("INSERT INTO friendship VALUES (5,1)")
 db.execute("INSERT INTO friendship VALUES (2,3)")
+db.execute("INSERT INTO friendship VALUES (3,2)")
 db.execute("INSERT INTO friendship VALUES (5,3)")
+db.execute("INSERT INTO friendship VALUES (3,5)")
 db.execute("INSERT INTO friendship VALUES (4,5)")
+db.execute("INSERT INTO friendship VALUES (5,4)")
 
 db.execute("CREATE TABLE conversation (id INTEGER PRIMARY KEY, name CHAR(100) NOT NULL)")
 db.execute("INSERT INTO conversation(name) VALUES ('Picoloc')")
