@@ -1,64 +1,67 @@
 from bottle import request, response
 from bottle import post, get, delete
 
-from api.utils.index import jsonSuccessReturn, jsonErrorReturn
+from api.utils.index import json_success_return, json_error_return
 from api.utils.index import sqliteDbAccess
 
-from api.constants.index import ErrorMessage, positionsTable
+from api.constants.index import ErrorMessage, POSITIONS_TABLE
 
 
 @post('/users/<user_id>/positions')
 def creation_handler(user_id):
-	'''Handles user creation'''
-	try:
-		try:
-			body = request.json
-		except:
-			raise ValueError
+    """Handles user creation"""
+    try:
+        try:
+            body = request.json
+        except:
+            raise ValueError
 
-		if body is None:
-			raise ValueError
+        if body is None:
+            raise ValueError
 
-		position = body['position']
+        position = body['position']
 
-	except ValueError:
-		return jsonErrorReturn(ErrorMessage._value)
+    except ValueError:
+        return json_error_return(ErrorMessage.VALUE)
 
-	except KeyError:
-		return jsonErrorReturn(ErrorMessage._key)
+    except KeyError:
+        return json_error_return(ErrorMessage.KEY)
 
-	try:
-		dbaccess = sqliteDbAccess.create_service()
-		user = dbaccess.insert(table=positionsTable, dict={"position": position, "user": user_id})
-	except sqliteDbAccess.Errors as e:
-		return jsonErrorReturn()
+    try:
+        dbaccess = sqliteDbAccess.create_service()
+        position = dbaccess.insert(table=POSITIONS_TABLE,
+                                   params={"position": position, "user": user_id},
+                                   get_last_attribute=True)
+    except sqliteDbAccess.Errors as e:
+        return json_error_return()
 
-	
-	return jsonSuccessReturn()
+    return json_success_return(position)
+
 
 @get('/users/<user_id>/positions')
-def listing_handler(user_id):
-	'''Handles user creation'''
+def list_positions_handler(user_id):
+    """Handles listing of a user's positions"""
 
-	dbaccess = sqliteDbAccess.create_service()
-	positions = dbaccess.get(table=positionsTable, wfilter=("user =" + user_id))
+    dbaccess = sqliteDbAccess.create_service()
+    positions = dbaccess.get(table=POSITIONS_TABLE, w_filter=("user =" + user_id))
 
-	if(positions):
-		return jsonSuccessReturn(positions)
+    if positions:
+        return json_success_return(positions)
 
-	#TODO separate case user doesn't exist
-	return jsonErrorReturn(ErrorMessage._nouserorposition)
+    # TODO separate case user doesn't exist
+    return json_error_return(ErrorMessage.NO_USER_OR_POSITION)
+
 
 @get('/users/<user_id>/positions/last')
-def show_handler(user_id):
-	'''Handles user creation'''
+def show_last_position_handler(user_id):
+    """Handles showing the last recorded position of a user"""
 
-	dbaccess = sqliteDbAccess.create_service()
-	wfilter = "user =" + user_id + " ORDER BY id DESC LIMIT 1" 
-	position = dbaccess.get(table=positionsTable, wfilter=wfilter, multiple=False)
+    dbaccess = sqliteDbAccess.create_service()
+    w_filter = "user =" + user_id + " ORDER BY id DESC LIMIT 1"
+    position = dbaccess.get(table=POSITIONS_TABLE, w_filter=w_filter, multiple=False)
 
-	if(position):
-		return jsonSuccessReturn(position)
+    if position:
+        return json_success_return(position)
 
-	#TODO separate case user doesn't exist
-	return jsonErrorReturn(ErrorMessage._nouserorposition)
+    # TODO separate case user doesn't exist
+    return json_error_return(ErrorMessage.NO_USER_OR_POSITION)

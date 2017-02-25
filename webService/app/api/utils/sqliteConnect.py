@@ -1,125 +1,137 @@
 import sqlite3
 
+
 def dict_factory(cursor, row):
-	d = {}
-	for idx, col in enumerate(cursor.description):
-		d[col[0]] = row[idx]
-	return d
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
 
 
-class sqliteDbAccess:
+class SqliteDbAccess:
+    Errors = sqlite3.Error
 
-	Errors = sqlite3.Error
+    @staticmethod
+    def create_service(path="../db/WAT.db", main_table=None):
 
-	@staticmethod
-	def create_service(path="../db/WAT.db", mainTable=None):
+        dbaccess = sqlite3.connect(path)
 
-		dbaccess = sqlite3.connect(path)
+        dbaccess.execute("PRAGMA foreign_keys = ON")
+        dbaccess.commit()
 
-		dbaccess.execute("PRAGMA foreign_keys = ON")
-		dbaccess.commit()
+        dbaccess.row_factory = dict_factory
 
-		dbaccess.row_factory = dict_factory
+        return SqliteDbAccess(dbaccess, main_table=main_table)
 
-		return sqliteDbAccess(dbaccess, mainTable=mainTable)
+    def __init__(self, dbaccess, main_table=None):
 
-	def __init__(self, dbaccess, mainTable=None):
+        if not isinstance(dbaccess, sqlite3.Connection):
+            raise TypeError("dbaccess must be an instance of Connection sqlite3 class")
+        self._dbaccess = dbaccess
+        self.main_table = main_table
 
-		if not isinstance(dbaccess, sqlite3.Connection):
-			raise TypeError("dbaccess must be an instance of Connection sqlite3 class")
-		self._dbaccess = dbaccess
-		self.mainTable = mainTable
+    def exec_and_commit(self, query, commit=True):
 
-	def execandcommit(self, query, commit=True):
+        try:
+            self._dbaccess.execute(query)
+            if commit:
+                self._dbaccess.commit()
+        except SqliteDbAccess.Errors as e:
+            self._dbaccess.rollback()
+            raise e
 
-		try:
-			self._dbaccess.execute(query)
-			if(commit):
-				self._dbaccess.commit()
-		except sqliteDbAccess.Errors as e:
-			self._dbaccess.rollback()
-			raise e
+    def get(self, table=None, w_filter=None, multiple=True):
 
-	def get(self, table=None, wfilter=None, multiple=True):
+        if not table:
+            table = self.main_table
+        w_string = (" WHERE " + w_filter) if w_filter else ''
+        result = self._dbaccess.cursor().execute("SELECT * FROM " + table + w_string)
 
-		if(not(table)):
-			table = self.mainTable
-		wstring = (" WHERE " + wfilter) if wfilter else ""
-		result = self._dbaccess.cursor().execute("SELECT * FROM " + table + wstring)
+        if multiple:
+            result = result.fetchall()
+        else:
+            result = result.fetchone()
 
-		if(multiple):
-			result = result.fetchall()
-		else:
-			result = result.fetchone()
+        return result
 
-		return result
+    def getlast(self, table=None, attribute="id"):
 
-	def getlast(self, table=None, attribute="id"):
+        if not table:
+            table = self.main_table
 
-		if(not(table)):
-			table = self.mainTable
+        querystring = "SELECT * FROM " + table + " ORDER BY " + attribute + " DESC LIMIT 1"
+        return self._dbaccess.cursor().execute(querystring).fetchone()
 
-		querystring = "SELECT * FROM " + table + " ORDER BY " + attribute + " DESC LIMIT 1"
-		return self._dbaccess.cursor().execute(querystring).fetchone()
+    def get_join(self, params=None, w_filter=None, distinct=True):
+        """Be careful, works only with 2 tables provided"""
 
-	def getjoin(self, params={}, wfilter=None, distinct=True):
-		#Be carefull, works only with 2 tables provided
+        if not params:
+            params = {}
 
-		wstring = (" WHERE " + wfilter + " AND ") if wfilter else ""
+        wstring = (" WHERE " + w_filter + " AND ") if w_filter else ""
 
-		tablesnamesstring = ''
-		returnattributesstring = ''
-		wfilterjoinstring = '('
+        tables_names_string = ''
+        return_attributes_string = ''
+        w_filter_join_string = '('
 
-		for table in params.keys():
-			tablesnamesstring += table + ", "
-			for attribute in params[table]["attributes"]:
-				returnattributesstring += (table + "." + attribute + ", ")
-			wfilterjoinstring += (table + "." + params[table]["join"] + "=")
+        for table in params.keys():
+            tables_names_string += table + ", "
+            for attribute in params[table]["attributes"]:
+                return_attributes_string += (table + "." + attribute + ", ")
+            w_filter_join_string += (table + "." + params[table]["join"] + "=")
 
-		tablesnamesstring = tablesnamesstring[:-2]
-		returnattributesstring = returnattributesstring[:-2]
-		wfilterjoinstring = wfilterjoinstring[:-1] + ')'
+        tables_names_string = tables_names_string[:-2]
+        return_attributes_string = return_attributes_string[:-2]
+        w_filter_join_string = w_filter_join_string[:-1] + ')'
 
-		wstring += wfilterjoinstring
-		selectstring = "SELECT DISTINCT " if distinct else "SELECT"
-		finalquerystring = selectstring + returnattributesstring + " FROM " + tablesnamesstring + wstring
-		return self._dbaccess.cursor().execute(finalquerystring).fetchall()
+        wstring += w_filter_join_string
+        select_string = "SELECT DISTINCT " if distinct else "SELECT"
+        final_query_string = select_string + return_attributes_string + " FROM " + tables_names_string + wstring
+        return self._dbaccess.cursor().execute(final_query_string).fetchall()
 
-	def insert(self, table=None, dict={}, commit=True):
+    def insert(self, table=None, params=None, commit=True, get_last_attribute=None):
 
-		if(not(table)):
-			table = self.mainTable
-			
-		tablestring = table + '('
-		valuesstring = '('
-		for attribute in dict.keys():
-			tablestring += attribute + ', '
-			valuesstring += (('"' + dict[attribute] + '", ') if type(dict[attribute]) == str else str(dict[attribute]) + ', ')
+        if not params:
+            params = {}
 
-		tablestring = tablestring[:-2] + ')'
-		valuesstring = valuesstring[:-2] + ')'
-		self.execandcommit(query=("INSERT INTO " + tablestring + " VALUES" + valuesstring), commit=commit)
+        if not table:
+            table = self.main_table
 
-	def update(self, table=None, sfilter=None, wfilter=None, commit=True):
+        tables_string = table + '('
+        values_string = '('
+        for attribute in params.keys():
+            tables_string += attribute + ", "
+            values_string += (("'" + params[attribute] + "', ")
+                              if type(params[attribute]) == str
+                              else str(params[attribute]) + ", ")
 
-		if(not(table)):
-			table = self.mainTable
+        tables_string = tables_string[:-2] + ')'
+        values_string = values_string[:-2] + ')'
+        self.exec_and_commit(query=("INSERT INTO " + tables_string + " VALUES" + values_string), commit=commit)
 
-		wstring = (" WHERE " + wfilter) if wfilter else ""
-		
-		self.execandcommit(query=("UPDATE " + table + " SET " + sfilter + wstring), commit=commit)
+        if get_last_attribute:
+            if type(get_last_attribute) == str:
+                return self.getlast(table=table, attribute=get_last_attribute)
+            else:
+                return self.getlast(table=table)
 
-	def delete(self, table=None, wfilter=None, commit=True):
-		
-		if(not(table)):
-			table = self.mainTable
+    def update(self, table=None, s_filter=None, w_filter=None, commit=True):
 
-		wstring = (" WHERE " + wfilter) if wfilter else ""
+        if not table:
+            table = self.main_table
 
-		self.execandcommit(query=("DELETE FROM " + table + wstring), commit=commit)
+        w_string = (" WHERE " + w_filter) if w_filter else ""
 
-	def __del__(self):
-		self._dbaccess.close()
+        self.exec_and_commit(query=("UPDATE " + table + " SET " + s_filter + w_string), commit=commit)
 
-Errors = sqlite3.Error
+    def delete(self, table=None, w_filter=None, commit=True):
+
+        if not table:
+            table = self.main_table
+
+        w_string = (" WHERE " + w_filter) if w_filter else ""
+
+        self.exec_and_commit(query=("DELETE FROM " + table + w_string), commit=commit)
+
+    def __del__(self):
+        self._dbaccess.close()

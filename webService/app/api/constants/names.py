@@ -1,15 +1,15 @@
-usersTable = "user"
-usersMessageName = "User"
+USERS_TABLE = "user"
+USERS_MESSAGE_NAME = "User"
 
-friendshipsTable = "friendship"
-friendshipsMessageName = "Friendship"
+FRIENDSHIPS_TABLE = "friendship"
+FRIENDSHIPS_MESSAGE_NAME = "Friendship"
 
-positionsTable = "position"
+POSITIONS_TABLE = "position"
 
-conversationsTable = "conversation"
-conversationsMessageName = "Conversation"
+CONVERSATIONS_TABLE = "conversation"
+CONVERSATIONS_MESSAGE_NAME = "Conversation"
 
-conversationParticipantsTable = "conversation_participant"
+CONVERSATION_PARTICIPANTS_TABLE = "conversation_participant"
 
-messagesTable = "message"
-messagesMessageName = "Message"
+MESSAGES_TABLE = "message"
+MESSAGES_MESSAGE_NAME = "Message"

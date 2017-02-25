@@ -1,3 +1,3 @@
-from api.constants.names import usersTable, friendshipsTable, conversationsTable, conversationParticipantsTable, messagesTable, positionsTable
-from api.constants.names import usersMessageName, friendshipsMessageName, conversationsMessageName, messagesMessageName
+from api.constants.names import USERS_TABLE, FRIENDSHIPS_TABLE, CONVERSATIONS_TABLE, CONVERSATION_PARTICIPANTS_TABLE, MESSAGES_TABLE, POSITIONS_TABLE
+from api.constants.names import USERS_MESSAGE_NAME, FRIENDSHIPS_MESSAGE_NAME, CONVERSATIONS_MESSAGE_NAME, MESSAGES_MESSAGE_NAME
 from api.constants.errorMessage import ErrorMessage
