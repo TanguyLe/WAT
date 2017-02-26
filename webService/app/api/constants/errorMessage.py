@@ -1,3 +1,5 @@
+
+
 class ErrorMessage:
     EXISTS_ALREADY = "Such {name} already exists"
     DOESNT_EXIST = "{name} doesn't exist"

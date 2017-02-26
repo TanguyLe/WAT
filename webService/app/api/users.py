@@ -1,8 +1,8 @@
-from bottle import request, response
+from bottle import request
 from bottle import post, get, delete, route
 
 from api.utils.index import json_success_return, json_error_return
-from api.utils.index import sqliteDbAccess
+from api.utils.index import SqliteDbAccess
 
 from api.constants.index import ErrorMessage, USERS_TABLE, USERS_MESSAGE_NAME
 
@@ -11,7 +11,7 @@ from api.constants.index import ErrorMessage, USERS_TABLE, USERS_MESSAGE_NAME
 def list_user_handler():
     """Handles users listing"""
 
-    dbaccess = sqliteDbAccess.create_service()
+    dbaccess = SqliteDbAccess.create_service()
     users = dbaccess.get(table=USERS_TABLE)
 
     return json_success_return(users)
@@ -21,7 +21,7 @@ def list_user_handler():
 def show_user_handler(user_id):
     """Handles single user show"""
 
-    dbaccess = sqliteDbAccess.create_service()
+    dbaccess = SqliteDbAccess.create_service()
     user = dbaccess.get(table=USERS_TABLE, w_filter=("id =" + user_id), multiple=False)
 
     if user:
@@ -53,11 +53,11 @@ def create_user_handler():
         return json_error_return(ErrorMessage.KEY)
 
     try:
-        dbaccess = sqliteDbAccess.create_service()
+        dbaccess = SqliteDbAccess.create_service()
         user = dbaccess.insert(table=USERS_TABLE,
                                params={"username": username, "password": password},
                                get_last_attribute=True)
-    except sqliteDbAccess.Errors as e:
+    except SqliteDbAccess.Errors as e:
         return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=USERS_MESSAGE_NAME))
 
     return json_success_return(user)
@@ -86,7 +86,7 @@ def update_username_or_password_handler(user_id):
 
     ### A lot of checks
 
-    dbaccess = sqliteDbAccess.create_service(main_table=USERS_TABLE)
+    dbaccess = SqliteDbAccess.create_service(main_table=USERS_TABLE)
     user = dbaccess.get(w_filter=("id =" + user_id))
     if user:
         try:
@@ -96,7 +96,7 @@ def update_username_or_password_handler(user_id):
 
             s_filter = '' + keys[-1] + "='" + body[keys[-1]] + "'"
             dbaccess.update(s_filter=s_filter, w_filter="id =" + user_id)
-        except sqliteDbAccess.Errors as e:
+        except SqliteDbAccess.Errors as e:
             return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=USERS_MESSAGE_NAME))
 
         return json_success_return()
@@ -108,7 +108,7 @@ def update_username_or_password_handler(user_id):
 def delete_user_handler(user_id):
     """Handles user deletion"""
 
-    dbaccess = sqliteDbAccess.create_service(main_table=USERS_TABLE)
+    dbaccess = SqliteDbAccess.create_service(main_table=USERS_TABLE)
     user = dbaccess.get(w_filter=("id =" + user_id))
 
     if user:
@@ -120,7 +120,7 @@ def delete_user_handler(user_id):
             dbaccess.delete(table="conversation_participant", w_filter=w_filter1, commit=False)
             dbaccess.delete(table="friendship", w_filter=w_filter2, commit=False)
             dbaccess.delete(w_filter=w_filter1)
-        except sqliteDbAccess.Errors as e:
+        except SqliteDbAccess.Errors as e:
             return json_error_return()
 
         return json_success_return()

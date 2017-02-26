@@ -2,7 +2,7 @@ from bottle import request
 from bottle import post
 
 from api.utils.index import json_success_return, json_error_return
-from api.utils.index import sqliteDbAccess
+from api.utils.index import SqliteDbAccess
 
 from api.constants.index import ErrorMessage, USERS_TABLE, USERS_MESSAGE_NAME
 
@@ -29,7 +29,7 @@ def login_handler():
     except KeyError:
         return json_error_return(ErrorMessage.KEY)
 
-    dbaccess = sqliteDbAccess.create_service()
+    dbaccess = SqliteDbAccess.create_service()
     user = dbaccess.get(table=USERS_TABLE, w_filter=("username =" + username))
     if user:
         if user['password'] == password:

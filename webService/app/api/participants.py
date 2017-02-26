@@ -2,7 +2,7 @@ from bottle import request
 from bottle import post, get, delete
 
 from api.utils.index import json_success_return, json_error_return
-from api.utils.index import sqliteDbAccess
+from api.utils.index import SqliteDbAccess
 
 from api.constants.index import ErrorMessage, CONVERSATIONS_MESSAGE_NAME
 from api.constants.index import CONVERSATIONS_TABLE, CONVERSATION_PARTICIPANTS_TABLE
@@ -12,7 +12,7 @@ from api.constants.index import CONVERSATIONS_TABLE, CONVERSATION_PARTICIPANTS_T
 def list_conversation_participants_handler(conversation_id):
     """Handles the listing of participants in a conversation"""
 
-    dbaccess = sqliteDbAccess.create_service()
+    dbaccess = SqliteDbAccess.create_service()
     conversation = dbaccess.get(table=CONVERSATIONS_TABLE, w_filter=("id =" + conversation_id))
 
     if conversation:
@@ -60,10 +60,10 @@ def create_conversation_participant_handler(conversation_id):
         return json_error_return(ErrorMessage.KEY)
 
     try:
-        dbaccess = sqliteDbAccess.create_service()
+        dbaccess = SqliteDbAccess.create_service()
         dbaccess.insert(table=CONVERSATION_PARTICIPANTS_TABLE,
                         dict={"conversation": conversation_id, "user": user_id})
-    except sqliteDbAccess.Errors as e:
+    except SqliteDbAccess.Errors as e:
         return json_error_return(ErrorMessage.USER_IN_CONVERSATION)
 
     return json_success_return()
@@ -73,12 +73,12 @@ def create_conversation_participant_handler(conversation_id):
 def delete_conversation_participant_handler(conversation_id, user_id):
     """Remove a participant from a conversation"""
 
-    dbaccess = sqliteDbAccess.create_service(main_table=CONVERSATION_PARTICIPANTS_TABLE)
+    dbaccess = SqliteDbAccess.create_service(main_table=CONVERSATION_PARTICIPANTS_TABLE)
     participants = dbaccess.get(w_filter=("conversation =" + conversation_id + " AND user =" + user_id))
     if participants:
         try:
             dbaccess.delete(w_filter=("conversation =" + conversation_id + " AND user =" + user_id))
-        except sqliteDbAccess.Errors as e:
+        except SqliteDbAccess.Errors as e:
             return json_error_return()
 
         return json_success_return()

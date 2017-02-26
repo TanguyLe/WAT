@@ -1,8 +1,8 @@
-from bottle import request, response
-from bottle import post, get, delete
+from bottle import request
+from bottle import post, get
 
 from api.utils.index import json_success_return, json_error_return
-from api.utils.index import sqliteDbAccess
+from api.utils.index import SqliteDbAccess
 
 from api.constants.index import ErrorMessage, POSITIONS_TABLE
 
@@ -28,11 +28,11 @@ def creation_handler(user_id):
         return json_error_return(ErrorMessage.KEY)
 
     try:
-        dbaccess = sqliteDbAccess.create_service()
+        dbaccess = SqliteDbAccess.create_service()
         position = dbaccess.insert(table=POSITIONS_TABLE,
                                    params={"position": position, "user": user_id},
                                    get_last_attribute=True)
-    except sqliteDbAccess.Errors as e:
+    except SqliteDbAccess.Errors as e:
         return json_error_return()
 
     return json_success_return(position)
@@ -42,7 +42,7 @@ def creation_handler(user_id):
 def list_positions_handler(user_id):
     """Handles listing of a user's positions"""
 
-    dbaccess = sqliteDbAccess.create_service()
+    dbaccess = SqliteDbAccess.create_service()
     positions = dbaccess.get(table=POSITIONS_TABLE, w_filter=("user =" + user_id))
 
     if positions:
@@ -56,7 +56,7 @@ def list_positions_handler(user_id):
 def show_last_position_handler(user_id):
     """Handles showing the last recorded position of a user"""
 
-    dbaccess = sqliteDbAccess.create_service()
+    dbaccess = SqliteDbAccess.create_service()
     w_filter = "user =" + user_id + " ORDER BY id DESC LIMIT 1"
     position = dbaccess.get(table=POSITIONS_TABLE, w_filter=w_filter, multiple=False)
 

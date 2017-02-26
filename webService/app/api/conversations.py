@@ -2,7 +2,7 @@ from bottle import request
 from bottle import post, get, delete, put
 
 from api.utils.index import json_success_return, json_error_return
-from api.utils.index import sqliteDbAccess
+from api.utils.index import SqliteDbAccess
 
 from api.constants.index import ErrorMessage, USERS_MESSAGE_NAME, CONVERSATIONS_MESSAGE_NAME, MESSAGES_TABLE
 from api.constants.index import USERS_TABLE, CONVERSATION_PARTICIPANTS_TABLE, CONVERSATIONS_TABLE
@@ -12,7 +12,7 @@ from api.constants.index import USERS_TABLE, CONVERSATION_PARTICIPANTS_TABLE, CO
 def list_conversations_handler(user_id):
     """Handles listing of the conversations of a user"""
 
-    dbaccess = sqliteDbAccess.create_service()
+    dbaccess = SqliteDbAccess.create_service()
     user = dbaccess.get(table=USERS_TABLE, w_filter=("id =" + user_id))
 
     if user:
@@ -60,14 +60,14 @@ def create_conversation_handler(user_id):
         return json_error_return(ErrorMessage.KEY)
 
     try:
-        dbaccess = sqliteDbAccess.create_service(main_table=CONVERSATION_PARTICIPANTS_TABLE)
+        dbaccess = SqliteDbAccess.create_service(main_table=CONVERSATION_PARTICIPANTS_TABLE)
         conversation = dbaccess.insert(table=CONVERSATIONS_TABLE,
                                        params={"name": conversation_name},
                                        get_last_attribute=True)
 
         dbaccess.insert(dict={"conversation": conversation["id"], "user": user_id})
         dbaccess.insert(dict={"conversation": conversation["id"], "user": second_user_id})
-    except sqliteDbAccess.Errors as e:
+    except SqliteDbAccess.Errors as e:
         return json_error_return()
 
     return json_success_return(conversation)
@@ -94,13 +94,13 @@ def update_conversation_name_handler(conversation_id):
     except KeyError:
         return json_error_return(ErrorMessage.KEY)
 
-    dbaccess = sqliteDbAccess.create_service(main_table=CONVERSATIONS_TABLE)
+    dbaccess = SqliteDbAccess.create_service(main_table=CONVERSATIONS_TABLE)
     conversation = dbaccess.get(w_filter=("id = " + conversation_id))
 
     if conversation:
         try:
             dbaccess.update(s_filter=("name = '" + conversation_name + "'"), w_filter=("id = " + conversation_id))
-        except sqliteDbAccess.Errors as e:
+        except SqliteDbAccess.Errors as e:
             return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=CONVERSATIONS_MESSAGE_NAME))
 
         return json_success_return()
@@ -112,7 +112,7 @@ def update_conversation_name_handler(conversation_id):
 def delete_conversation_handler(conversation_id):
     """Handles conversation deletion"""
 
-    dbaccess = sqliteDbAccess.create_service(main_table=CONVERSATIONS_TABLE)
+    dbaccess = SqliteDbAccess.create_service(main_table=CONVERSATIONS_TABLE)
     conversation = dbaccess.get(w_filter=("id = " + conversation_id))
 
     if conversation:
@@ -121,7 +121,7 @@ def delete_conversation_handler(conversation_id):
             dbaccess.delete(table=CONVERSATION_PARTICIPANTS_TABLE, w_filter=w_filter, commit=False)
             dbaccess.delete(table=MESSAGES_TABLE, w_filter=w_filter, commit=False)
             dbaccess.delete(w_filter=("id =" + conversation_id))
-        except sqliteDbAccess.Errors as e:
+        except SqliteDbAccess.Errors as e:
             return json_error_return()
 
         return json_success_return()
