@@ -4,7 +4,7 @@ from bottle import post, get
 from api.utils.index import json_success_return, json_error_return
 from api.utils.index import SqliteDbAccess
 
-from api.constants.index import ErrorMessage, POSITIONS_TABLE
+from api.constants.index import ErrorMessage, POSITIONS_TABLE, USERS_TABLE, USERS_MESSAGE_NAME
 
 
 @post('/users/<user_id>/positions')
@@ -19,7 +19,7 @@ def creation_handler(user_id):
         if body is None:
             raise ValueError
 
-        position = body['position']
+        position = str(body['position'])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -32,8 +32,8 @@ def creation_handler(user_id):
         position = dbaccess.insert(table=POSITIONS_TABLE,
                                    params={"position": position, "user": user_id},
                                    get_last_attribute=True)
-    except SqliteDbAccess.Errors as e:
-        return json_error_return()
+    except SqliteDbAccess.Error as e:
+        return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
     return json_success_return(position)
 
@@ -43,13 +43,16 @@ def list_positions_handler(user_id):
     """Handles listing of a user's positions"""
 
     dbaccess = SqliteDbAccess.create_service()
-    positions = dbaccess.get(table=POSITIONS_TABLE, w_filter=("user =" + user_id))
+    user = dbaccess.get(table=USERS_TABLE, w_filter=("id =" + user_id))
 
-    if positions:
-        return json_success_return(positions)
+    if user:
+        positions = dbaccess.get(table=POSITIONS_TABLE, w_filter=("user =" + user_id))
 
-    # TODO separate case user doesn't exist
-    return json_error_return(ErrorMessage.NO_USER_OR_POSITION)
+        if positions:
+            return json_success_return(positions)
+        return json_error_return(ErrorMessage.NO_POSITION)
+
+    return json_error_return(ErrorMessage.DOESNT_EXIST.format(name=USERS_MESSAGE_NAME))
 
 
 @get('/users/<user_id>/positions/last')
@@ -57,11 +60,14 @@ def show_last_position_handler(user_id):
     """Handles showing the last recorded position of a user"""
 
     dbaccess = SqliteDbAccess.create_service()
-    w_filter = "user =" + user_id + " ORDER BY id DESC LIMIT 1"
-    position = dbaccess.get(table=POSITIONS_TABLE, w_filter=w_filter, multiple=False)
+    user = dbaccess.get(table=USERS_TABLE, w_filter=("id =" + user_id))
 
-    if position:
-        return json_success_return(position)
+    if user:
+        w_filter = "user =" + user_id + " ORDER BY id DESC LIMIT 1"
+        position = dbaccess.get(table=POSITIONS_TABLE, w_filter=w_filter, multiple=False)
 
-    # TODO separate case user doesn't exist
-    return json_error_return(ErrorMessage.NO_USER_OR_POSITION)
+        if position:
+            return json_success_return(position)
+        return json_error_return(ErrorMessage.NO_POSITION)
+
+    return json_error_return(ErrorMessage.DOESNT_EXIST.format(name=USERS_MESSAGE_NAME))

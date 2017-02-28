@@ -50,8 +50,8 @@ def create_conversation_handler(user_id):
         if body is None:
             raise ValueError
 
-        conversation_name = body['convname']
-        second_user_id = body['user_id']
+        conversation_name = str(body['convname'])
+        second_user_id = str(body['user_id'])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -65,10 +65,10 @@ def create_conversation_handler(user_id):
                                        params={"name": conversation_name},
                                        get_last_attribute=True)
 
-        dbaccess.insert(dict={"conversation": conversation["id"], "user": user_id})
-        dbaccess.insert(dict={"conversation": conversation["id"], "user": second_user_id})
-    except SqliteDbAccess.Errors as e:
-        return json_error_return()
+        dbaccess.insert(params={"conversation": conversation["id"], "user": user_id})
+        dbaccess.insert(params={"conversation": conversation["id"], "user": second_user_id})
+    except SqliteDbAccess.Error as e:
+        return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
     return json_success_return(conversation)
 
@@ -86,7 +86,7 @@ def update_conversation_name_handler(conversation_id):
         if body is None:
             raise ValueError
 
-        conversation_name = body["convname"]
+        conversation_name = str(body["convname"])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -100,8 +100,8 @@ def update_conversation_name_handler(conversation_id):
     if conversation:
         try:
             dbaccess.update(s_filter=("name = '" + conversation_name + "'"), w_filter=("id = " + conversation_id))
-        except SqliteDbAccess.Errors as e:
-            return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=CONVERSATIONS_MESSAGE_NAME))
+        except SqliteDbAccess.Error as e:
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 
@@ -121,8 +121,8 @@ def delete_conversation_handler(conversation_id):
             dbaccess.delete(table=CONVERSATION_PARTICIPANTS_TABLE, w_filter=w_filter, commit=False)
             dbaccess.delete(table=MESSAGES_TABLE, w_filter=w_filter, commit=False)
             dbaccess.delete(w_filter=("id =" + conversation_id))
-        except SqliteDbAccess.Errors as e:
-            return json_error_return()
+        except SqliteDbAccess.Error as e:
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 

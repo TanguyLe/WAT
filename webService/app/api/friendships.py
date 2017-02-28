@@ -49,7 +49,7 @@ def creation_handler(user_id):
         if body is None:
             raise ValueError
 
-        friend_id = body['user_id']
+        friend_id = str(body['user_id'])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -59,14 +59,14 @@ def creation_handler(user_id):
 
     try:
         dbaccess = SqliteDbAccess.create_service()
-        w_filter = "firstFriend =" + str(friend_id) + " AND secondFriend =" + str(user_id)
+        w_filter = "firstFriend =" + friend_id + " AND secondFriend =" + user_id
         friendship = dbaccess.get(table=FRIENDSHIPS_TABLE, w_filter=w_filter)
         if friendship:
             return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=FRIENDSHIPS_MESSAGE_NAME))
 
-        dbaccess.insert(table=FRIENDSHIPS_TABLE, dict={"firstFriend": user_id, "secondFriend": friend_id})
-        dbaccess.insert(table=FRIENDSHIPS_TABLE, dict={"firstFriend": friend_id, "secondFriend": user_id})
-    except SqliteDbAccess.Errors as e:
+        dbaccess.insert(table=FRIENDSHIPS_TABLE, params={"firstFriend": user_id, "secondFriend": friend_id})
+        dbaccess.insert(table=FRIENDSHIPS_TABLE, params={"firstFriend": friend_id, "secondFriend": user_id})
+    except SqliteDbAccess.Error as e:
         return json_error_return()
 
     return json_success_return()
@@ -85,8 +85,8 @@ def deletion_handler(user_id, friend_id):
         try:
             dbaccess.delete(w_filter=w_filter1)
             dbaccess.delete(w_filter=w_filter2)
-        except SqliteDbAccess.Errors as e:
-            return json_error_return()
+        except SqliteDbAccess.Error as e:
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 

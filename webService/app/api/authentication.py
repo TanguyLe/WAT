@@ -20,8 +20,8 @@ def login_handler():
         if body is None:
             raise ValueError
 
-        username = body['username']
-        password = body['password']
+        username = str(body['username'])
+        password = str(body['password'])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)

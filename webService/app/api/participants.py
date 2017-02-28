@@ -51,7 +51,7 @@ def create_conversation_participant_handler(conversation_id):
         if body is None:
             raise ValueError
 
-        user_id = body['user_id']
+        user_id = str(body['user_id'])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -62,9 +62,11 @@ def create_conversation_participant_handler(conversation_id):
     try:
         dbaccess = SqliteDbAccess.create_service()
         dbaccess.insert(table=CONVERSATION_PARTICIPANTS_TABLE,
-                        dict={"conversation": conversation_id, "user": user_id})
-    except SqliteDbAccess.Errors as e:
-        return json_error_return(ErrorMessage.USER_IN_CONVERSATION)
+                        params={"conversation": conversation_id, "user": user_id})
+    except SqliteDbAccess.Error as e:
+        if e.type == "INTEGRITY_ERROR":
+            return json_error_return(ErrorMessage.USER_IN_CONVERSATION)
+        return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
     return json_success_return()
 
@@ -78,8 +80,8 @@ def delete_conversation_participant_handler(conversation_id, user_id):
     if participants:
         try:
             dbaccess.delete(w_filter=("conversation =" + conversation_id + " AND user =" + user_id))
-        except SqliteDbAccess.Errors as e:
-            return json_error_return()
+        except SqliteDbAccess.Error as e:
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 

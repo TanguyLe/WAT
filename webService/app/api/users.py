@@ -43,8 +43,8 @@ def create_user_handler():
         if body is None:
             raise ValueError
 
-        username = body['username']
-        password = body['password']
+        username = str(body['username'])
+        password = str(body['password'])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -57,8 +57,10 @@ def create_user_handler():
         user = dbaccess.insert(table=USERS_TABLE,
                                params={"username": username, "password": password},
                                get_last_attribute=True)
-    except SqliteDbAccess.Errors as e:
-        return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=USERS_MESSAGE_NAME))
+    except SqliteDbAccess.Error as e:
+        if e.type == "INTEGRITY_ERROR":
+            return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=USERS_MESSAGE_NAME))
+        return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
     return json_success_return(user)
 
@@ -77,6 +79,7 @@ def update_username_or_password_handler(user_id):
             raise ValueError
 
         keys = list(body.keys())
+        keys = [str(elem) for elem in keys]
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -84,7 +87,7 @@ def update_username_or_password_handler(user_id):
     except KeyError:
         return json_error_return(ErrorMessage.KEY)
 
-    ### A lot of checks
+    # A lot of checks
 
     dbaccess = SqliteDbAccess.create_service(main_table=USERS_TABLE)
     user = dbaccess.get(w_filter=("id =" + user_id))
@@ -96,8 +99,10 @@ def update_username_or_password_handler(user_id):
 
             s_filter = '' + keys[-1] + "='" + body[keys[-1]] + "'"
             dbaccess.update(s_filter=s_filter, w_filter="id =" + user_id)
-        except SqliteDbAccess.Errors as e:
-            return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=USERS_MESSAGE_NAME))
+        except SqliteDbAccess.Error as e:
+            if e.type == "INTEGRITY_ERROR":
+                return json_error_return(ErrorMessage.EXISTS_ALREADY.format(name=USERS_MESSAGE_NAME))
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 
@@ -120,8 +125,8 @@ def delete_user_handler(user_id):
             dbaccess.delete(table="conversation_participant", w_filter=w_filter1, commit=False)
             dbaccess.delete(table="friendship", w_filter=w_filter2, commit=False)
             dbaccess.delete(w_filter=w_filter1)
-        except SqliteDbAccess.Errors as e:
-            return json_error_return()
+        except SqliteDbAccess.Error as e:
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 

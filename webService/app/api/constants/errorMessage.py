@@ -8,4 +8,8 @@ class ErrorMessage:
     PASSWORD = "Wrong password"
     USER_IN_CONVERSATION = "User already participating in the conversation"
     USER_NOT_IN_CONVERSATION = "User doesn't participate in this conversation"
-    NO_USER_OR_POSITION = "User doesn't exist or doesn't have a position recorded"
+    NO_POSITION = "User doesn't have a position recorded"
+
+    INTEGRITY_ERROR = "The data you're trying to insert is not correct : {error}"
+    PROGRAMMING_ERROR = "The way you're trying to insert the data is wrong : {error}"
+    UNKNOWN_ERROR = "Unknown Error"

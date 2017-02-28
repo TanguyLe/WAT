@@ -47,8 +47,8 @@ def create_conversation_handler(conversation_id):
         message = dbaccess.insert(table=MESSAGES_TABLE,
                                   params={"content": content, "conversation": conversation_id, "user": user_id},
                                   get_last_attribute=True)
-    except SqliteDbAccess.Errors as e:
-        return json_error_return()
+    except SqliteDbAccess.Error as e:
+        return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
     return json_success_return(message)
 
@@ -66,7 +66,7 @@ def update_message_content_handler(msg_id):
         if body is None:
             raise ValueError
 
-        content = body["content"]
+        content = str(body["content"])
 
     except ValueError:
         return json_error_return(ErrorMessage.VALUE)
@@ -80,8 +80,8 @@ def update_message_content_handler(msg_id):
     if message:
         try:
             dbaccess.update(s_filter=("content ='" + content + "'"), w_filter=("id =" + msg_id))
-        except SqliteDbAccess.Errors as e:
-            return json_error_return()
+        except SqliteDbAccess.Error as e:
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 
@@ -98,9 +98,8 @@ def delete_message_handler(msg_id):
     if message:
         try:
             dbaccess.delete(w_filter="id =" + msg_id)
-        except SqliteDbAccess.Errors as e:
-
-            return json_error_return()
+        except SqliteDbAccess.Error as e:
+            return json_error_return(getattr(ErrorMessage, e.type).format(error=e))
 
         return json_success_return()
 

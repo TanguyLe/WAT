@@ -9,7 +9,9 @@ def dict_factory(cursor, row):
 
 
 class SqliteDbAccess:
-    Errors = sqlite3.Error
+    IntegrityError = sqlite3.IntegrityError
+    ProgrammingError = sqlite3.ProgrammingError
+    Error = sqlite3.Error
 
     @staticmethod
     def create_service(path="../db/WAT.db", main_table=None):
@@ -36,8 +38,15 @@ class SqliteDbAccess:
             self._dbaccess.execute(query)
             if commit:
                 self._dbaccess.commit()
-        except SqliteDbAccess.Errors as e:
+        except SqliteDbAccess.Error as e:
             self._dbaccess.rollback()
+
+            if type(e) == sqlite3.OperationalError:
+                e.type = "PROGRAMMING_ERROR"
+            elif type(e) == sqlite3.IntegrityError:
+                e.type = "INTEGRITY_ERROR"
+            else:
+                e.type = "UNKNOWN_ERROR"
             raise e
 
     def get(self, table=None, w_filter=None, multiple=True):
