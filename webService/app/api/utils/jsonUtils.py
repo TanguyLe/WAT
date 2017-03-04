@@ -1,10 +1,13 @@
 import json
 from bottle import response
+from api.utils.logManager import LogManager
 
 
 def json_error_return(message="Unknown Error"):
 
     response.headers["Content-Type"] = "application/json"
+    LogManager.error_log("jsonUtils -- " + str(message))
+
     return json.dumps({"status": "ERROR", "message": str(message)})
 
 

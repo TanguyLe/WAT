@@ -1,4 +1,5 @@
 import sqlite3
+from api.utils.logManager import LogManager
 
 
 def dict_factory(cursor, row):
@@ -17,9 +18,11 @@ class SqliteDbAccess:
     def create_service(path="../db/WAT.db", main_table=None):
 
         dbaccess = sqlite3.connect(path)
+        LogManager.info_log("SQLiteConnect -- " + "Connection to the database")
 
         dbaccess.execute("PRAGMA foreign_keys = ON")
         dbaccess.commit()
+        LogManager.info_log("SQLiteConnect -- " + "Enabling foreign keys")
 
         dbaccess.row_factory = dict_factory
 
@@ -28,7 +31,9 @@ class SqliteDbAccess:
     def __init__(self, dbaccess, main_table=None):
 
         if not isinstance(dbaccess, sqlite3.Connection):
+            LogManager.error_log("SQLiteConnect -- " + "dbaccess must be an instance of Connection sqlite3 class")
             raise TypeError("dbaccess must be an instance of Connection sqlite3 class")
+
         self._dbaccess = dbaccess
         self.main_table = main_table
 
@@ -38,6 +43,9 @@ class SqliteDbAccess:
             self._dbaccess.execute(query)
             if commit:
                 self._dbaccess.commit()
+
+            LogManager.info_log("SQLiteConnect -- " + "Executing SQL Query : " + query)
+
         except SqliteDbAccess.Error as e:
             self._dbaccess.rollback()
 
@@ -47,6 +55,9 @@ class SqliteDbAccess:
                 e.type = "INTEGRITY_ERROR"
             else:
                 e.type = "UNKNOWN_ERROR"
+
+            LogManager.error_log("SQLiteConnect -- " + "Rollback, error : " + e)
+
             raise e
 
     def get(self, table=None, w_filter=None, multiple=True):
@@ -54,7 +65,10 @@ class SqliteDbAccess:
         if not table:
             table = self.main_table
         w_string = (" WHERE " + w_filter) if w_filter else ''
-        result = self._dbaccess.cursor().execute("SELECT * FROM " + table + w_string)
+        query = "SELECT * FROM " + table + w_string
+        result = self._dbaccess.cursor().execute(query)
+
+        LogManager.info_log("SQLiteConnect -- " + "Executing SQL Query : " + query)
 
         if multiple:
             result = result.fetchall()
@@ -63,13 +77,14 @@ class SqliteDbAccess:
 
         return result
 
-    def getlast(self, table=None, attribute="id"):
+    def get_last(self, table=None, attribute="id"):
 
         if not table:
             table = self.main_table
 
-        querystring = "SELECT * FROM " + table + " ORDER BY " + attribute + " DESC LIMIT 1"
-        return self._dbaccess.cursor().execute(querystring).fetchone()
+        query_string = "SELECT * FROM " + table + " ORDER BY " + attribute + " DESC LIMIT 1"
+        LogManager.info_log("SQLiteConnect -- " + "Executing SQL Query : " + query_string)
+        return self._dbaccess.cursor().execute(query_string).fetchone()
 
     def get_join(self, params=None, w_filter=None, distinct=True):
         """Be careful, works only with 2 tables provided"""
@@ -96,6 +111,8 @@ class SqliteDbAccess:
         wstring += w_filter_join_string
         select_string = "SELECT DISTINCT " if distinct else "SELECT"
         final_query_string = select_string + return_attributes_string + " FROM " + tables_names_string + wstring
+
+        LogManager.info_log("SQLiteConnect -- " + "Executing SQL Query : " + final_query_string)
         return self._dbaccess.cursor().execute(final_query_string).fetchall()
 
     def insert(self, table=None, params=None, commit=True, get_last_attribute=None):
@@ -120,9 +137,9 @@ class SqliteDbAccess:
 
         if get_last_attribute:
             if type(get_last_attribute) == str:
-                return self.getlast(table=table, attribute=get_last_attribute)
+                return self.get_last(table=table, attribute=get_last_attribute)
             else:
-                return self.getlast(table=table)
+                return self.get_last(table=table)
 
     def update(self, table=None, s_filter=None, w_filter=None, commit=True):
 
@@ -143,4 +160,5 @@ class SqliteDbAccess:
         self.exec_and_commit(query=("DELETE FROM " + table + w_string), commit=commit)
 
     def __del__(self):
+        LogManager.info_log("SQLiteConnect -- " + "Closing database connection")
         self._dbaccess.close()
