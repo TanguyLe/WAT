@@ -15,7 +15,9 @@ First install the latest python 3 release from [python's website](https://www.py
 And finally [sqlite](https://www.tutorialspoint.com/sqlite/sqlite_installation.htm) following the instructions.
 ##QuickStart
 ###WebService
-After setting up with your OS, you can browse at localhost:8080 to use the webService, see localhost:8080/help.
+First run the script webService/db/db_init.py in its own directory to set up the database with sample data.
+
+Then after setting up with your OS (see below), you can browse at localhost:8080 to use the webService, see localhost:8080/help.
 ####Ubuntu
 Switch to your virtual environnement by running `. ./env/bin/activate` (if your environnement is env) in the correct directory and then `python ./main.py`. (May vary according to your python command)
 ####Windows
