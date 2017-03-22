@@ -1,6 +1,5 @@
 import sqlite3
-from api.utils.index import LogManager
-
+from api.utils.logManager import LogManager
 from api.constants.index import LOG_FULL_SQLITE_QUERY, LOG_SQLITE
 
 
