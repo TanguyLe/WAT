@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_accueil"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="wat.ihm.Accueil">
+
+    <TextView
+        android:text="Liste des utilisateurs"
+        android:layout_width="100dp"
+        android:id="@+id/Titre"
+        android:layout_height="40dp" />
+    <Button
+        android:text="Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/txtConvers"
+        android:layout_toRightOf="@+id/txtConvers"
+        android:layout_toEndOf="@+id/txtConvers"
+        android:layout_marginLeft="12dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginBottom="77dp"
+        android:id="@+id/bouton"
+        android:onClick="swapActivity"/>
+    <TextView
+        android:translationY="100dp"
+        android:layout_width="80dp"
+        android:id="@+id/Liste"
+        android:layout_height="300dp" />
+</RelativeLayout>

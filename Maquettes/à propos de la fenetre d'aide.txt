@@ -1,0 +1,3 @@
+Une 2nde activité sera surement nécéssaire pour contenir du texte.
+On peux la rendre accessibledepuis l'ecran de connection,
+ou bien faire comme la liste d'amis, un écran glissable sur un coté.
