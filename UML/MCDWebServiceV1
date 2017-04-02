@@ -1,0 +1,16 @@
+User(#id: integer, username: string, password: string)
+USERNAME NOT NULL AND UNIQUE,
+PASSWORD must contain at least 8 caracters
+
+Friendship(#firstFriend: integer => User(id), #secondFriend: integer => User(id))
+
+Conversation(#id: integer, name: string)
+NAME NOT NULL
+
+ConversationParticipant(#conversation: integer => Conversation(id), #user: integer => User(id))
+
+Message(#id: integer, text: Text, createdDate: datetime, user: integer => User(id), conversation: integer => Conversation(id))
+createdDate NOT NULL, user NOT NULL, conversation NOT NULL
+
+Position(#id: integer, createdDate: datetime, position: string, user: integer => User(id))
+position NOT NULL, createdDate NOT NULL, user NOT NULL

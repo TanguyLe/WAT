@@ -1,0 +1,15 @@
+USERS_TABLE = "user"
+USERS_MESSAGE_NAME = "User"
+
+FRIENDSHIPS_TABLE = "friendship"
+FRIENDSHIPS_MESSAGE_NAME = "Friendship"
+
+POSITIONS_TABLE = "position"
+
+CONVERSATIONS_TABLE = "conversation"
+CONVERSATIONS_MESSAGE_NAME = "Conversation"
+
+CONVERSATION_PARTICIPANTS_TABLE = "conversation_participant"
+
+MESSAGES_TABLE = "message"
+MESSAGES_MESSAGE_NAME = "Message"
