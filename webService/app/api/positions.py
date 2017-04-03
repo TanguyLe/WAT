@@ -80,17 +80,18 @@ def handle_position_setting(user_id):
     """Websocket implementation to record positions"""
 
     wsoc = WebsocketWrapper.create_service()
+    dbaccess = SqliteDbAccess.create_service(logging=False)
 
     while True:
         try:
             position = wsoc.receive()
             if position:
-                dbaccess = SqliteDbAccess.create_service()
                 dbaccess.insert(table=POSITIONS_TABLE,
                                 params={"position": str(position), "user": user_id},
                                 get_last_attribute=True)
         except WebsocketWrapper.Error:
             break
+
 
 @route('/users/<user_id>/positionsGetter')
 def handle_position_getting(user_id):
@@ -99,10 +100,10 @@ def handle_position_getting(user_id):
     current_position = None
 
     wsoc = WebsocketWrapper.create_service()
+    dbaccess = SqliteDbAccess.create_service(logging=False)
 
     while True:
         try:
-            dbaccess = SqliteDbAccess.create_service()
             position = dbaccess.get(table=POSITIONS_TABLE, w_filter=w_filter, multiple=False)
             if position and position["position"] != current_position:
                 current_position = position["position"]

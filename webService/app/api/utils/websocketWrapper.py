@@ -19,8 +19,6 @@ class WebsocketWrapper:
             LogManager.error_log(LOG_WEBSOCKETS + "Connection Failed")
             abort(400, 'Expected WebSocket request.')
 
-        LogManager.disable_logger()
-
         return WebsocketWrapper(websocket)
 
     def __init__(self, websocket):
@@ -34,4 +32,3 @@ class WebsocketWrapper:
 
     def __del__(self):
         LogManager.info_log(LOG_WEBSOCKETS + "Closing WebSocket Connection")
-        LogManager.enable_logger()
