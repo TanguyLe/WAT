@@ -32,11 +32,11 @@ public class AuthenticationActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.authentication_form);
 
-        myTextViewUsername = (TextView)findViewById(R.id.usernameLabel);
-        myTextViewPassword = (TextView)findViewById(R.id.passwordLabel);
-        myEditTextUsername = (EditText)findViewById(R.id.usernameField);
-        myEditTextPassword = (EditText)findViewById(R.id.passwordField);
-        submitButton = (Button)findViewById(R.id.submitButton);
+        myTextViewUsername = (TextView) findViewById(R.id.usernameLabel);
+        myTextViewPassword = (TextView) findViewById(R.id.passwordLabel);
+        myEditTextUsername = (EditText) findViewById(R.id.usernameField);
+        myEditTextPassword = (EditText) findViewById(R.id.passwordField);
+        submitButton = (Button) findViewById(R.id.submitButton);
 
         submitButton.setOnClickListener(clickListenerButtons);
 
