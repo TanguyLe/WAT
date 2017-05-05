@@ -2,221 +2,222 @@
 
 	<head>
 		<title>WAT WebService Help</title>
+		<style>
+			td {border: 1px solid black;}
+			th {border: 1px solid black; border-bottom: 2px solid black;}
+		</style>
 	</head>
 
 	<body>
-		<div>
-			<h1>WAT WebService Help</h1>
-			<table style="border: 1px solid">
-				<tr>
-					<th>Route</th>
-					<th>Method</th>
-					<th>Body</th>
-					<th>Query</th>
-					<th>Response Type</th>
-					<th>Desc</th>
-				</tr>
-				<tr>
-					<td>/users</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Array</td>
-					<td>Listing of all users</td>
-				</tr>
-				<tr>
-					<td>/users</td>
-					<td>POST</td>
-					<td>{"username": "test", "password": "passwordTest"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Create a new user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Object of one user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id</td>
-					<td>DELETE</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Delete a user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id</td>
-					<td>PATCH</td>
-					<td>{"username": "test"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Change a username or a password</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/friends</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Array</td>
-					<td>Listing all friends of a user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/friends</td>
-					<td>POST</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Add a new friend to a user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/friends/friend_id</td>
-					<td>DELETE</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Delete a friendship between 2 users</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/conversations</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Array</td>
-					<td>Return all the conversations of a user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/conversations</td>
-					<td>POST</td>
-					<td>{"name": "test", "second_user_id": "12"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Create a new conversation</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/positions</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Return all the positions of a user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/positions</td>
-					<td>POST</td>
-					<td>{"position": "XXXXXX"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Create a new position for a user</td>
-				</tr>
-				<tr>
-					<td>/users/user_id/positions/last</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Last position of a user</td>
-				</tr>
-				<tr>
-					<td>/help</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>HTML</td>
-					<td>HTML Help page</td>
-				</tr>
-				<tr>
-					<td>/login</td>
-					<td>POST</td>
-					<td>{"username": "test", "password": "testpass"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Login a user</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id</td>
-					<td>DELETE</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Delete a conversation</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id</td>
-					<td>PUT</td>
-					<td>{"name" : "test"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Change the name of a conversation</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id/participants</td>
-					<td>POST</td>
-					<td>{"user_id": "2"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Add a new participant to a conversation</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id/participants</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Array</td>
-					<td>Return all users participating in a conversation</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id/participants/id</td>
-					<td>DELETE</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Remove a participant from a conversation</td>
-				</tr>
-				<tr>
-					<td>/messages/msg_id</td>
-					<td>DELETE</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Delete a message</td>
-				</tr>
-				<tr>
-					<td>/messages/msg_id</td>
-					<td>PUT</td>
-					<td>{"content": "New message"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Change the text of a message</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id/messages</td>
-					<td>POST</td>
-					<td>{"user_id": "2", "content": "New message"}</td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Create a new message in a conversation</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id/messages</td>
-					<td>GET</td>
-					<td></td>
-					<td></td>
-					<td>Array</td>
-					<td>Return all messages from a conv</td>
-				</tr>
-				<tr>
-					<td>/conversations/conversation_id/messages/id</td>
-					<td>DELETE</td>
-					<td></td>
-					<td></td>
-					<td>Object(status)</td>
-					<td>Delete a message from a conversation</td>
-				</tr>
-			</table>
-		</div>
+		<h1>WAT WebService Help</h1>
+		All the routes are returning the follow JSON structure :
+		<pre>
+			{
+				"status": "SUCCESS",
+				"data": []
+			}
+		</pre>
+		With status containing the status of the request (SUCCESS or ERROR) and data the response.
+		All requests should be fired with a query parameter : "key", filled with the API Token to pass authentication.
+		<br/>
+		<br/>
+		<table style="border: 5px solid; border-collapse: collapse;">
+			<tr>
+				<th>Route</th>
+				<th>Method</th>
+				<th>Body</th>
+				<th>Response Type of data</th>
+				<th>Desc</th>
+			</tr>
+			<tr>
+				<td>/help</td>
+				<td>GET</td>
+				<td></td>
+				<td>HTML</td>
+				<td>HTML Help page</td>
+			</tr>
+			<tr>
+				<td>/login</td>
+				<td>POST</td>
+				<td><pre>{"username": "test", "password": "testpass"}</pre></td>
+				<td>Object</td>
+				<td>Login a user by returning an API access Token</td>
+			</tr>
+			<tr>
+				<td>/users</td>
+				<td>GET</td>
+				<td></td>
+				<td>Array</td>
+				<td>Listing of all users</td>
+			</tr>
+			<tr>
+				<td>/users</td>
+				<td>POST</td>
+				<td><pre>{"username": "test", "password": "passwordTest"}</pre></td>
+				<td>Object</td>
+				<td>Create a new user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id</td>
+				<td>GET</td>
+				<td></td>
+				<td>Object</td>
+				<td>Get the information of a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id</td>
+				<td>DELETE</td>
+				<td></td>
+				<td>Object</td>
+				<td>Delete a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id</td>
+				<td>PATCH</td>
+				<td><pre>{"username": "test"}</pre></td>
+				<td>Object</td>
+				<td>Change a piece of information about a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/friends</td>
+				<td>GET</td>
+				<td></td>
+				<td>Array</td>
+				<td>Listing all friends of a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/friends</td>
+				<td>POST</td>
+				<td></td>
+				<td>Object</td>
+				<td>Create a friendship between 2 users</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/friends/friend_id</td>
+				<td>DELETE</td>
+				<td></td>
+				<td>Object</td>
+				<td>Delete a friendship between 2 users</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/conversations</td>
+				<td>GET</td>
+				<td></td>
+				<td>Array</td>
+				<td>Return all the conversations of a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/conversations</td>
+				<td>POST</td>
+				<td><pre>{"name": "test", "second_user_id": "12"}</pre></td>
+				<td>Object</td>
+				<td>Create a new conversation</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/positions</td>
+				<td>GET</td>
+				<td></td>
+				<td>Object</td>
+				<td>Return all the positions of a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/positions</td>
+				<td>POST</td>
+				<td><pre>{"position": "XXXXXX"}</pre></td>
+				<td>Object</td>
+				<td>Create a new position for a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/positions/last</td>
+				<td>GET</td>
+				<td></td>
+				<td>Object</td>
+				<td>Last position of a user</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/positionsSender</td>
+				<td>WebSocket posting</td>
+				<td>Position string</td>
+				<td></td>
+				<td>Create a new position for a user through a Websocket</td>
+			</tr>
+			<tr>
+				<td>/users/user_id/positionsGetter</td>
+				<td>WebSocket getting</td>
+				<td></td>
+				<td>Position string</td>
+				<td>Returns any new position for a user through a Websocket</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id</td>
+				<td>DELETE</td>
+				<td></td>
+				<td>Object</td>
+				<td>Delete a conversation</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id</td>
+				<td>PUT</td>
+				<td><pre>{"name" : "test"}</pre></td>
+				<td>Object</td>
+				<td>Change the name of a conversation</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id/participants</td>
+				<td>POST</td>
+				<td><pre>{"user_id": "2"}</pre></td>
+				<td>Object</td>
+				<td>Add a new participant to a conversation</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id/participants</td>
+				<td>GET</td>
+				<td></td>
+				<td>Array</td>
+				<td>Return all users participating in a conversation</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id/participants/id</td>
+				<td>DELETE</td>
+				<td></td>
+				<td>Object</td>
+				<td>Remove a participant from a conversation</td>
+			</tr>
+			<tr>
+				<td>/messages/msg_id</td>
+				<td>DELETE</td>
+				<td></td>
+				<td>Object</td>
+				<td>Delete a message</td>
+			</tr>
+			<tr>
+				<td>/messages/msg_id</td>
+				<td>PUT</td>
+				<td><pre>{"content": "New message"}</pre></td>
+				<td>Object</td>
+				<td>Change the text of a message</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id/messages</td>
+				<td>POST</td>
+				<td><pre>{"user_id": "2", "content": "New message"}</pre></td>
+				<td>Object</td>
+				<td>Create a new message in a conversation</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id/messages</td>
+				<td>GET</td>
+				<td></td>
+				<td>Array</td>
+				<td>Return all messages from a conv</td>
+			</tr>
+			<tr>
+				<td>/conversations/conversation_id/messages/id</td>
+				<td>DELETE</td>
+				<td></td>
+				<td>Object</td>
+				<td>Delete a message from a conversation</td>
+			</tr>
+		</table>
 	</body>
 </html>

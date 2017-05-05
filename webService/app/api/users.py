@@ -3,6 +3,7 @@ from bottle import post, get, delete, route
 
 from api.utils.index import json_success_return, json_error_return
 from api.utils.index import SqliteDbAccess
+from api.utils.index import authenticate_user
 
 from api.constants.index import ErrorMessage, USERS_TABLE, USERS_MESSAGE_NAME
 
@@ -10,6 +11,10 @@ from api.constants.index import ErrorMessage, USERS_TABLE, USERS_MESSAGE_NAME
 @get('/users')
 def list_user_handler():
     """Handles users listing"""
+
+    auth_error = authenticate_user(request.query.key)
+    if auth_error:
+        return json_success_return(auth_error)
 
     dbaccess = SqliteDbAccess.create_service()
     users = dbaccess.get(table=USERS_TABLE)
@@ -20,6 +25,10 @@ def list_user_handler():
 @get('/users/<user_id>')
 def show_user_handler(user_id):
     """Handles single user show"""
+
+    auth_error = authenticate_user(request.query.key)
+    if auth_error:
+        return json_success_return(auth_error)
 
     dbaccess = SqliteDbAccess.create_service()
     user = dbaccess.get(table=USERS_TABLE, w_filter=("id =" + user_id), multiple=False)
@@ -33,6 +42,10 @@ def show_user_handler(user_id):
 @post('/users')
 def create_user_handler():
     """Handles user creation"""
+
+    auth_error = authenticate_user(request.query.key)
+    if auth_error:
+        return json_success_return(auth_error)
 
     try:
         try:
@@ -68,6 +81,10 @@ def create_user_handler():
 @route('/users/<user_id>', 'PATCH')
 def update_username_or_password_handler(user_id):
     """Handles changing username or password"""
+
+    auth_error = authenticate_user(request.query.key)
+    if auth_error:
+        return json_success_return(auth_error)
 
     try:
         try:
@@ -112,6 +129,10 @@ def update_username_or_password_handler(user_id):
 @delete('/users/<user_id>')
 def delete_user_handler(user_id):
     """Handles user deletion"""
+
+    auth_error = authenticate_user(request.query.key)
+    if auth_error:
+        return json_success_return(auth_error)
 
     dbaccess = SqliteDbAccess.create_service(main_table=USERS_TABLE)
     user = dbaccess.get(w_filter=("id =" + user_id))
