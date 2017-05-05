@@ -13,7 +13,7 @@ import android.content.Intent;
  */
 
 public class ExerciceActivity extends Activity {
-    Button myButton = null;
+    Button myButton = null, myButton2 = null;
     TextView myText = null;
 
     private View.OnTouchListener touchListenerButtons = new View.OnTouchListener() {
@@ -22,6 +22,14 @@ public class ExerciceActivity extends Activity {
             myButton.setTextSize(Math.abs(event.getX() - myButton.getWidth() / 2) +
                     Math.abs(event.getY() - myButton.getHeight() / 2));
             return true;
+        }
+    };
+
+    private View.OnClickListener clickListenerButtons = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            Intent myIntent = new Intent(ExerciceActivity.this, GeolocationActivity.class);
+            ExerciceActivity.this.startActivity(myIntent);
         }
     };
 
@@ -35,10 +43,12 @@ public class ExerciceActivity extends Activity {
 
         setContentView(R.layout.exercice_layout);
 
-        myButton = (Button)findViewById(R.id.button1);
+        myButton = (Button) findViewById(R.id.button1);
+        myButton2 = (Button) findViewById(R.id.button2);
+        myButton2.setOnClickListener(clickListenerButtons);
         myButton.setOnTouchListener(touchListenerButtons);
 
-        myText = (TextView)findViewById(R.id.authenticatedLabel);
+        myText = (TextView) findViewById(R.id.authenticatedLabel);
         myText.setText("Coucou " + username + ", ça va ? Au fait j'ai vu ton password : " + password + ", lol.");
     }
 }
